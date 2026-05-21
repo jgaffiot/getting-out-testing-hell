@@ -1,0 +1,46 @@
+name: CI
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          # No caching — reinstalls all dependencies on every run
+
+      - name: Install dependencies
+        run: pip install -e ".[test]"
+        # Uses pip instead of uv; no lock file pinning
+
+      - name: Start PostgreSQL
+        run: |
+          sudo systemctl start postgresql
+          sudo -u postgres psql -c "CREATE USER bookstore WITH PASSWORD 'bookstore';"
+          sudo -u postgres psql -c "CREATE DATABASE bookstore OWNER bookstore;"
+          # No wait/health check — tests may start before DB is ready
+
+      - name: Run migrations
+        run: alembic upgrade head
+        # Will fail silently if DB isn't up yet
+
+      - name: Start app
+        run: uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+        # No health check — tests start immediately, race condition
+
+      - name: Run tests
+        run: pytest tests/ -v
+        env:
+          # Payment API key hardcoded in the workflow — will fail without it
+          PAYMENT_API_KEY: ${{ secrets.PAYMENT_API_KEY }}
+          # No DATABASE_URL override — uses the hardcoded default from config.py
+
+      # No coverage reporting
+      # No test result artifacts
+      # No notification on failure
