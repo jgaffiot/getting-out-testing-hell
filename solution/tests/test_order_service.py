@@ -1,9 +1,9 @@
 """
-Unit tests for OrderService business logic.
+Unit tests for OrderService.create_order and the pure compute_total function.
 
-No HTTP, no real DB — only the pure service layer with fakes injected.
+No HTTP, no real DB connection management — only the service layer with
+fakes injected. Cancellation tests live in test_cancellation.py.
 """
-from datetime import datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -43,22 +43,7 @@ class TestComputeTotal:
         assert compute_total([]) == Decimal("0")
 
 
-# --- Service tests with fakes ---
-
-@pytest.fixture
-def payment():
-    return FakePaymentClient()
-
-
-@pytest.fixture
-def email():
-    return FakeEmailClient()
-
-
-@pytest.fixture
-def service(db, payment, email):
-    return OrderService(db=db, payment=payment, email=email)
-
+# --- Service tests with fakes (shared payment / email / service fixtures live in conftest.py) ---
 
 class TestCreateOrder:
     def test_creates_confirmed_order(self, service, make_user, make_book):
@@ -151,7 +136,7 @@ class TestCreateOrder:
                 card_token="tok_visa",
             )
 
-    def test_payment_failure_rolls_back_stock(self, service, make_user, make_book, db):
+    def test_payment_failure_rolls_back_stock(self, db, make_user, make_book):
         user = make_user()
         book = make_book(stock=3)
         failing_payment = FakePaymentClient(fail_on_token="tok_decline")
@@ -166,60 +151,3 @@ class TestCreateOrder:
 
         db.refresh(book)
         assert book.stock == 3  # stock was not reduced
-
-
-class TestCancelOrder:
-    def _make_order(self, service, make_user, make_book, **kwargs):
-        user = make_user()
-        book = make_book(stock=5)
-        return service.create_order(
-            user_id=user.id,
-            items=[{"book_id": book.id, "quantity": 2}],
-            card_token="tok_visa",
-            **kwargs,
-        )
-
-    def test_cancels_within_window(self, db, make_user, make_book, payment, email):
-        fixed_now = datetime(2024, 6, 1, 12, 0, 0)
-        service = OrderService(db=db, payment=payment, email=email, now=lambda: fixed_now)
-
-        order = self._make_order(service, make_user, make_book)
-        cancelled = service.cancel_order(order.id)
-
-        assert cancelled.status == OrderStatus.CANCELLED
-
-    def test_refunds_payment(self, db, make_user, make_book, payment, email):
-        fixed_now = datetime(2024, 6, 1, 12, 0, 0)
-        service = OrderService(db=db, payment=payment, email=email, now=lambda: fixed_now)
-
-        order = self._make_order(service, make_user, make_book)
-        service.cancel_order(order.id)
-
-        assert payment.charges[0].refunded is True
-
-    def test_restores_stock(self, db, make_user, make_book, payment, email):
-        fixed_now = datetime(2024, 6, 1, 12, 0, 0)
-        service = OrderService(db=db, payment=payment, email=email, now=lambda: fixed_now)
-
-        book = make_book(stock=5)
-        user = make_user()
-        order = service.create_order(
-            user_id=user.id,
-            items=[{"book_id": book.id, "quantity": 3}],
-            card_token="tok_visa",
-        )
-        service.cancel_order(order.id)
-
-        db.refresh(book)
-        assert book.stock == 5
-
-    def test_raises_after_cancellation_window(self, db, make_user, make_book, payment, email):
-        order_time = datetime(2024, 6, 1, 12, 0, 0)
-        service_at_order_time = OrderService(db=db, payment=payment, email=email, now=lambda: order_time)
-        order = self._make_order(service_at_order_time, make_user, make_book)
-
-        # Try to cancel 2 hours later
-        later = order_time + timedelta(hours=2)
-        service_later = OrderService(db=db, payment=payment, email=email, now=lambda: later)
-        with pytest.raises(ValueError, match="expired"):
-            service_later.cancel_order(order.id)

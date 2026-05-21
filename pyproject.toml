@@ -24,6 +24,13 @@ test = [
     # "testcontainers[postgres]>=4.8",
     # "respx>=0.21",
 ]
+# Self-contained extra for running the reference solution under solution/
+solution = [
+    "pytest>=8.2",
+    "pytest-cov>=5.0",
+    "testcontainers[postgres]>=4.8",
+    "respx>=0.21",
+]
 
 [build-system]
 requires = ["hatchling"]
