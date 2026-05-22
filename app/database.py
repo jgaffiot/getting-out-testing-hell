@@ -20,4 +20,5 @@ def get_db():
 
 def init_db():
     from app.models import book, order, user  # noqa: F401
+
     Base.metadata.create_all(bind=engine)

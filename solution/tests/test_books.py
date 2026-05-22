@@ -3,18 +3,22 @@ Book endpoint tests — clean version.
 
 Every test is independent: no global state, full rollback after each.
 """
+
 from decimal import Decimal
 import pytest
 
 
 def test_create_book(api_client):
-    response = api_client.post("/books/", json={
-        "title": "Clean Code",
-        "author": "Robert C. Martin",
-        "isbn": "9780132350884",
-        "price": "35.99",
-        "stock": 10,
-    })
+    response = api_client.post(
+        "/books/",
+        json={
+            "title": "Clean Code",
+            "author": "Robert C. Martin",
+            "isbn": "9780132350884",
+            "price": "35.99",
+            "stock": 10,
+        },
+    )
     assert response.status_code == 201
     data = response.json()
     assert data["title"] == "Clean Code"
@@ -46,21 +50,30 @@ def test_list_books_returns_all(api_client, make_book):
 
 @pytest.mark.parametrize("price", ["-1", "0", "-0.01"])
 def test_create_book_rejects_non_positive_price(api_client, price):
-    response = api_client.post("/books/", json={
-        "title": "X", "author": "Y", "price": price, "stock": 0,
-    })
+    response = api_client.post(
+        "/books/",
+        json={
+            "title": "X",
+            "author": "Y",
+            "price": price,
+            "stock": 0,
+        },
+    )
     assert response.status_code == 422
 
 
 def test_create_book_duplicate_isbn_returns_409(api_client, make_book):
     make_book(isbn="9780132350884")
-    response = api_client.post("/books/", json={
-        "title": "Another Book",
-        "author": "Someone",
-        "isbn": "9780132350884",
-        "price": "10.00",
-        "stock": 1,
-    })
+    response = api_client.post(
+        "/books/",
+        json={
+            "title": "Another Book",
+            "author": "Someone",
+            "isbn": "9780132350884",
+            "price": "10.00",
+            "stock": 1,
+        },
+    )
     assert response.status_code == 409
 
 

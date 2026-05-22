@@ -4,6 +4,7 @@ Cancellation tests — exercise the 1-hour window with an injected `now`.
 Demonstrates the value of treating "what time is it?" as a dependency:
 no sleep(3700), no flakiness, every boundary directly testable.
 """
+
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -79,7 +80,9 @@ class TestCancellationSideEffects:
 
         assert payment.charges[0].refunded is True
 
-    def test_restores_stock_for_every_item(self, db, payment, email, make_user, make_book):
+    def test_restores_stock_for_every_item(
+        self, db, payment, email, make_user, make_book
+    ):
         user = make_user()
         book_a = make_book(title="A", price=Decimal("10.00"), stock=10)
         book_b = make_book(title="B", price=Decimal("15.00"), stock=8)
@@ -94,7 +97,9 @@ class TestCancellationSideEffects:
             card_token="tok_visa",
         )
 
-        _service_at(db, payment, email, ORDER_TIME + timedelta(minutes=5)).cancel_order(order.id)
+        _service_at(db, payment, email, ORDER_TIME + timedelta(minutes=5)).cancel_order(
+            order.id
+        )
 
         db.refresh(book_a)
         db.refresh(book_b)

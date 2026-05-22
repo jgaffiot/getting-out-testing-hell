@@ -5,6 +5,7 @@ This is the "minimal refactor" of app/api/orders.py: every external
 collaborator (DB session, payment client, email client) is wired through
 Depends, so tests can swap them via dependency_overrides.
 """
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 

@@ -4,6 +4,7 @@ Unit tests for OrderService.create_order and the pure compute_total function.
 No HTTP, no real DB connection management — only the service layer with
 fakes injected. Cancellation tests live in test_cancellation.py.
 """
+
 from decimal import Decimal
 
 import pytest
@@ -14,6 +15,7 @@ from solution.order_service import OrderService, compute_total
 
 
 # --- Pure function tests ---
+
 
 class TestComputeTotal:
     def test_single_item(self):
@@ -36,14 +38,16 @@ class TestComputeTotal:
         assert total == Decimal("100.00")
 
     def test_promo_code_case_insensitive(self):
-        assert compute_total([(Decimal("100.00"), 1)], promo_code="save10") == \
-               compute_total([(Decimal("100.00"), 1)], promo_code="SAVE10")
+        assert compute_total(
+            [(Decimal("100.00"), 1)], promo_code="save10"
+        ) == compute_total([(Decimal("100.00"), 1)], promo_code="SAVE10")
 
     def test_empty_items(self):
         assert compute_total([]) == Decimal("0")
 
 
 # --- Service tests with fakes (shared payment / email / service fixtures live in conftest.py) ---
+
 
 class TestCreateOrder:
     def test_creates_confirmed_order(self, service, make_user, make_book):

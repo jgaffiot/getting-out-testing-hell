@@ -5,6 +5,7 @@ Scope hierarchy:
 - session: one real PostgreSQL container for the whole test run
 - function (default): each test gets a rolled-back transaction
 """
+
 import pytest
 from decimal import Decimal
 from fastapi import FastAPI
@@ -68,6 +69,7 @@ def api_client(db):
 
 # --- Fakes shared by service-level and API-level tests ---
 
+
 @pytest.fixture
 def payment():
     return FakePaymentClient()
@@ -84,6 +86,7 @@ def service(db, payment, email):
 
 
 # --- API client wired to the refactored orders router + fakes ---
+
 
 @pytest.fixture
 def orders_api_client(db, payment, email):
@@ -107,13 +110,17 @@ def orders_api_client(db, payment, email):
 
 # --- Data factories ---
 
+
 @pytest.fixture
 def make_book(db):
-    def _make(title="Test Book", author="Author", price=Decimal("20.00"), stock=10, isbn=None):
+    def _make(
+        title="Test Book", author="Author", price=Decimal("20.00"), stock=10, isbn=None
+    ):
         book = Book(title=title, author=author, price=price, stock=stock, isbn=isbn)
         db.add(book)
         db.flush()
         return book
+
     return _make
 
 
@@ -124,4 +131,5 @@ def make_user(db):
         db.add(user)
         db.flush()
         return user
+
     return _make

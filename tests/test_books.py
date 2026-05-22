@@ -4,6 +4,7 @@ Tests for the books API.
 Run with: pytest tests/test_books.py
 Requires a running PostgreSQL instance and the app running on localhost:8000.
 """
+
 import requests
 
 BASE_URL = "http://localhost:8000"
@@ -14,13 +15,16 @@ created_book_id = None
 
 def test_create_book():
     global created_book_id
-    response = requests.post(f"{BASE_URL}/books/", json={
-        "title": "Clean Code",
-        "author": "Robert C. Martin",
-        "isbn": "9780132350884",
-        "price": 35.99,
-        "stock": 10,
-    })
+    response = requests.post(
+        f"{BASE_URL}/books/",
+        json={
+            "title": "Clean Code",
+            "author": "Robert C. Martin",
+            "isbn": "9780132350884",
+            "price": 35.99,
+            "stock": 10,
+        },
+    )
     assert response.status_code == 201
     created_book_id = response.json()["id"]
 
@@ -51,32 +55,41 @@ def test_update_book():
 
 
 def test_create_book_invalid_price():
-    response = requests.post(f"{BASE_URL}/books/", json={
-        "title": "Free Book",
-        "author": "Nobody",
-        "price": -1,
-        "stock": 0,
-    })
+    response = requests.post(
+        f"{BASE_URL}/books/",
+        json={
+            "title": "Free Book",
+            "author": "Nobody",
+            "price": -1,
+            "stock": 0,
+        },
+    )
     # Magic number — why 422?
     assert response.status_code == 422
 
 
 def test_duplicate_isbn():
     # Creates a book that pollutes the DB and is never cleaned up
-    requests.post(f"{BASE_URL}/books/", json={
-        "title": "Duplicate Test",
-        "author": "Test",
-        "isbn": "9780132350884",  # same ISBN as created in test_create_book
-        "price": 10.0,
-        "stock": 1,
-    })
-    response = requests.post(f"{BASE_URL}/books/", json={
-        "title": "Duplicate Test 2",
-        "author": "Test",
-        "isbn": "9780132350884",
-        "price": 10.0,
-        "stock": 1,
-    })
+    requests.post(
+        f"{BASE_URL}/books/",
+        json={
+            "title": "Duplicate Test",
+            "author": "Test",
+            "isbn": "9780132350884",  # same ISBN as created in test_create_book
+            "price": 10.0,
+            "stock": 1,
+        },
+    )
+    response = requests.post(
+        f"{BASE_URL}/books/",
+        json={
+            "title": "Duplicate Test 2",
+            "author": "Test",
+            "isbn": "9780132350884",
+            "price": 10.0,
+            "stock": 1,
+        },
+    )
     assert response.status_code == 409
 
 

@@ -8,6 +8,7 @@ These tests drive the real FastAPI app via TestClient, with:
 No live server, no live payment endpoint, no live SMTP — but the HTTP
 layer, validation, dependency injection and DB schema are all real.
 """
+
 from decimal import Decimal
 
 import pytest

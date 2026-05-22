@@ -22,8 +22,14 @@ class OrderService:
         self._payment = PaymentClient()
         self._email = EmailClient()
 
-    def create_order(self, user_id: int, items: list[dict], card_token: str, promo_code: str | None = None) -> Order:
-        db = SessionLocal()   # creates its own session — cannot inject a test session
+    def create_order(
+        self,
+        user_id: int,
+        items: list[dict],
+        card_token: str,
+        promo_code: str | None = None,
+    ) -> Order:
+        db = SessionLocal()  # creates its own session — cannot inject a test session
         try:
             user = db.query(User).filter(User.id == user_id).first()
             if not user:
@@ -32,7 +38,9 @@ class OrderService:
                 raise ValueError("User account is inactive")
 
             if len(items) > MAX_ITEMS_PER_ORDER:
-                raise ValueError(f"Cannot order more than {MAX_ITEMS_PER_ORDER} different items")
+                raise ValueError(
+                    f"Cannot order more than {MAX_ITEMS_PER_ORDER} different items"
+                )
 
             total = Decimal("0")
             order_items = []
@@ -42,15 +50,19 @@ class OrderService:
                 if not book:
                     raise ValueError(f"Book {item['book_id']} not found")
                 if book.stock < item["quantity"]:
-                    raise ValueError(f"Insufficient stock for '{book.title}': {book.stock} available")
+                    raise ValueError(
+                        f"Insufficient stock for '{book.title}': {book.stock} available"
+                    )
 
                 line_total = Decimal(str(book.price)) * item["quantity"]
                 total += line_total
-                order_items.append(OrderItem(
-                    book_id=book.id,
-                    quantity=item["quantity"],
-                    unit_price=book.price,
-                ))
+                order_items.append(
+                    OrderItem(
+                        book_id=book.id,
+                        quantity=item["quantity"],
+                        unit_price=book.price,
+                    )
+                )
                 book.stock -= item["quantity"]
 
             if promo_code:
@@ -59,7 +71,9 @@ class OrderService:
                     raise ValueError(f"Invalid promo code: {promo_code}")
                 total = total * (1 - discount)
 
-            charge = self._payment.charge(total, card_token, description=f"Order for {user.email}")
+            charge = self._payment.charge(
+                total, card_token, description=f"Order for {user.email}"
+            )
 
             order = Order(
                 user_id=user_id,
@@ -67,7 +81,7 @@ class OrderService:
                 total=total,
                 promo_code=promo_code,
                 charge_id=charge["id"],
-                created_at=datetime.utcnow(),   # cannot control time in tests
+                created_at=datetime.utcnow(),  # cannot control time in tests
             )
             order.items = order_items
             db.add(order)
@@ -126,7 +140,9 @@ class OrderService:
         finally:
             db.close()
 
-    def calculate_order_total(self, items: list[dict], promo_code: str | None = None) -> Decimal:
+    def calculate_order_total(
+        self, items: list[dict], promo_code: str | None = None
+    ) -> Decimal:
         # Pure calculation buried in a class that also does I/O — hard to test in isolation
         db = SessionLocal()
         try:

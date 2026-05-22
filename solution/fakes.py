@@ -4,6 +4,7 @@ In-process fakes for external dependencies.
 A fake is a simplified but *working* implementation of a collaborator.
 It's faster and more reliable than a mock, and more honest than a stub.
 """
+
 from decimal import Decimal
 from dataclasses import dataclass, field
 
@@ -28,6 +29,7 @@ class FakePaymentClient:
     def charge(self, amount: Decimal, card_token: str, description: str = "") -> dict:
         if card_token == self._fail_on_token:
             from app.clients.payment_client import PaymentError
+
             raise PaymentError("Card declined")
         charge = FakeCharge(
             id=f"ch_{self._next_id:04d}",
@@ -43,6 +45,7 @@ class FakePaymentClient:
         charge = next((c for c in self.charges if c.id == charge_id), None)
         if not charge:
             from app.clients.payment_client import PaymentError
+
             raise PaymentError(f"Charge {charge_id} not found")
         charge.refunded = True
         return {"id": f"re_{charge_id}", "status": "succeeded"}

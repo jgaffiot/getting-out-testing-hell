@@ -24,7 +24,9 @@ class Order(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     user = relationship("User")
-    items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    items = relationship(
+        "OrderItem", back_populates="order", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Order id={self.id} status={self.status} total={self.total}>"

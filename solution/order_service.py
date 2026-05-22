@@ -6,6 +6,7 @@ Key changes vs the original:
 2. `datetime.utcnow` replaced by an injectable `now` callable
 3. `compute_total()` extracted as a pure function — no I/O
 """
+
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -26,7 +27,9 @@ PROMO_CODES: dict[str, Decimal] = {
 }
 
 
-def compute_total(prices: list[tuple[Decimal, int]], promo_code: str | None = None) -> Decimal:
+def compute_total(
+    prices: list[tuple[Decimal, int]], promo_code: str | None = None
+) -> Decimal:
     """Pure function — no DB, no I/O, trivially unit-testable."""
     total = sum(price * quantity for price, quantity in prices)
     if promo_code:
@@ -48,7 +51,13 @@ class OrderService:
         self._email = email
         self._now = now
 
-    def create_order(self, user_id: int, items: list[dict], card_token: str, promo_code: str | None = None) -> Order:
+    def create_order(
+        self,
+        user_id: int,
+        items: list[dict],
+        card_token: str,
+        promo_code: str | None = None,
+    ) -> Order:
         user = self._db.query(User).filter(User.id == user_id).first()
         if not user:
             raise ValueError(f"User {user_id} not found")
@@ -56,7 +65,9 @@ class OrderService:
             raise ValueError("User account is inactive")
 
         if len(items) > MAX_ITEMS_PER_ORDER:
-            raise ValueError(f"Cannot order more than {MAX_ITEMS_PER_ORDER} different items")
+            raise ValueError(
+                f"Cannot order more than {MAX_ITEMS_PER_ORDER} different items"
+            )
 
         prices: list[tuple[Decimal, int]] = []
         order_items: list[OrderItem] = []
@@ -66,13 +77,21 @@ class OrderService:
             if not book:
                 raise ValueError(f"Book {item['book_id']} not found")
             if book.stock < item["quantity"]:
-                raise ValueError(f"Insufficient stock for '{book.title}': {book.stock} available")
+                raise ValueError(
+                    f"Insufficient stock for '{book.title}': {book.stock} available"
+                )
             prices.append((Decimal(str(book.price)), item["quantity"]))
-            order_items.append(OrderItem(book_id=book.id, quantity=item["quantity"], unit_price=book.price))
+            order_items.append(
+                OrderItem(
+                    book_id=book.id, quantity=item["quantity"], unit_price=book.price
+                )
+            )
             book.stock -= item["quantity"]
 
         total = compute_total(prices, promo_code)
-        charge = self._payment.charge(total, card_token, description=f"Order for {user.email}")
+        charge = self._payment.charge(
+            total, card_token, description=f"Order for {user.email}"
+        )
 
         order = Order(
             user_id=user_id,

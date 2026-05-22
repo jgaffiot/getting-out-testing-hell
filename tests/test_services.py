@@ -2,6 +2,7 @@
 Service-layer tests. These look like unit tests but are secretly coupled
 to the real database and use overly-patched mocks that test nothing real.
 """
+
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
@@ -12,8 +13,8 @@ from app.services.order_service import OrderService, PROMO_CODES
 
 # --- Tests that look like unit tests but require a real DB ---
 
-class TestOrderServiceCalculation:
 
+class TestOrderServiceCalculation:
     def test_promo_code_save10(self):
         # Calls calculate_order_total which opens a real DB connection
         service = OrderService()
@@ -34,12 +35,14 @@ class TestOrderServiceCalculation:
 
 # --- Tests that mock so much they verify nothing ---
 
-class TestOrderCreation:
 
+class TestOrderCreation:
     @patch("app.services.order_service.SessionLocal")
     @patch("app.services.order_service.PaymentClient")
     @patch("app.services.order_service.EmailClient")
-    def test_create_order_calls_payment(self, mock_email_cls, mock_payment_cls, mock_session_cls):
+    def test_create_order_calls_payment(
+        self, mock_email_cls, mock_payment_cls, mock_session_cls
+    ):
         # Build a maze of mocks
         mock_session = MagicMock()
         mock_session_cls.return_value = mock_session
@@ -81,7 +84,9 @@ class TestOrderCreation:
     @patch("app.services.order_service.SessionLocal")
     @patch("app.services.order_service.PaymentClient")
     @patch("app.services.order_service.EmailClient")
-    def test_create_order_sends_email(self, mock_email_cls, mock_payment_cls, mock_session_cls):
+    def test_create_order_sends_email(
+        self, mock_email_cls, mock_payment_cls, mock_session_cls
+    ):
         # Copy-paste of the above setup — no shared fixture
         mock_session = MagicMock()
         mock_session_cls.return_value = mock_session
@@ -121,7 +126,9 @@ class TestOrderCreation:
     @patch("app.services.order_service.SessionLocal")
     @patch("app.services.order_service.PaymentClient")
     @patch("app.services.order_service.EmailClient")
-    def test_inactive_user_raises(self, mock_email_cls, mock_payment_cls, mock_session_cls):
+    def test_inactive_user_raises(
+        self, mock_email_cls, mock_payment_cls, mock_session_cls
+    ):
         mock_session = MagicMock()
         mock_session_cls.return_value = mock_session
 
@@ -139,6 +146,7 @@ class TestOrderCreation:
 
 
 # --- Test that never fails ---
+
 
 def test_order_service_instantiation():
     # Instantiating the service tries to connect to the payment API URL — but doesn't fail yet
