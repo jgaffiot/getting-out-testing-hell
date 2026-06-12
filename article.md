@@ -3,7 +3,7 @@
 ## Intro
 
 La nécessité d'écrire des tests automatisés est maintenant bien établie chez les
-développeurs. Il s'agit du seul moyen de tester souvent et complètement, pour
+développeurs. Il s'agit du seul moyen de tester systématiquement et complètement, pour
 éviter les régressions ou tout simplement ne pas avancer à l'aveugle.
 
 Mais une fois posé ce consensus, les ennuis commencent. Ecrire les tests est considéré
@@ -28,12 +28,11 @@ dont l'objectif est d'en assurer la qualité :
 fiabilité, répétabilité, maintenabilité, évolutivité.
 
 Comme tout système logiciel, il demande du temps de développement et des compétences
-chères à acquérir. La suite de test constitue donc un investissement pour le projet
+chères à acquérir. Ainsi, la suite de test constitue un investissement pour le projet
 principal, qui doit donc en retirer un bénéfice sur la qualité. Il est donc crucial
-de définir (et encore mieux d'écrire) ce qui est attendu des tests. Comme il est
-toujours possible d'ajouter des tests, il faut aussi définir a priori les moyens alloués
-aux tests, qui permettront d'arbitrer plus tard entre ajouter des tests, ou ajouter
-des fonctionnalités. 
+de définir ce qui est attendu des tests. Comme il est toujours possible d'ajouter des
+tests, il faut aussi définir les moyens alloués aux tests, qui permettront d'arbitrer 
+plus tard entre ajouter des tests, ou ajouter des fonctionnalités. 
 
 Les tests automatisés, par opposition aux tests manuels, constituent tout ou partie de
 la suite de tests, et ont comme caractéristique de pouvoir être lancés automatiquement
@@ -42,8 +41,8 @@ pour une utilisation de GitHub ou GitLab. Ainsi, on s'assure contre la plupart d
 régressions, et cette information est apportée rapidement au développeur.
 
 Les tests qui ne peuvent ou ne sont généralement pas automatisés comprennent par exemple
-les tests utilisateurs (dont tests d'ergonomie ou d'expérience, tests A/B...), les
-tests de charges, les tests de performances, les tests de pénétration...
+les tests utilisateurs (dont tests d'ergonomie, tests A/B...), les tests de charges,
+les tests de performances, les tests de pénétration...
 
 Une fois de plus, les tests automatisés sont là pour apporter un certain niveau de
 confiance sur la qualité du code, pour atteindre les objectifs de qualité du projet,
@@ -51,18 +50,42 @@ dans les moyens alloués.
 
 ## Repartir de la base
 
-Les tests font partie de la boite à outil pour atteindre cet objectif, mais ils ne sont
-pas seuls. Nous allons donc déployer plusieurs couches successives d'outils de qualité.
+Les tests font partie de la boite à outil pour atteindre l'objectif de qualité, mais ils
+ne sont pas seuls. Nous allons donc déployer plusieurs couches successives d'outils
+de qualité.
 
 La première est un formatteur de code, qui permet d'uniformiser le code. Les avantages
 sont de faciliter la lecture du code, qui en se présentant toujours sous la même forme
-sera perçu plus facilement par le cerveau, et de diminuer la charge du développeur,
-qui n'a plus à aligner son code à la main.
+sera perçu plus facilement par le cerveau, de diminuer la charge du développeur,
+qui n'a plus à aligner son code à la main, et de nettoyer les comparaisons de code de
+toutes les différences de caractères d'espacement, ce qui facilite grandement les
+revues de code.
 
-Ensuite, un ou des analyseur statique (ou linter) permet de capturer en masse des
-mauvaises pratiques suivant des règles simples à diagnostiquer. Le compilateur avec tous
-ses warnings ou un analyseur de type (pour les codes interprétés) permet ensuite de 
-s'assurer de la cohérence d'ensemble, toujours sans avoir exécuté une ligne du code.
+La seconde couche est constituée de logiciels d'analyse, et en premier lieu des outils
+d'analyse statique. Ces derniers n'exécutent pas le code (d'où le nom de "statique")
+mais cherchent des mauvaises pratiques en suivant des règles simples de reconnaissance
+de texte, comme des expressions régulières. Leur gros avantage est de détecter des bugs
+très rapidement et sans risque (le code ne tourne pas) et sans condition (pas besoin
+d'environnement de test ou autre).
+
+On trouve aussi dans cette catégorie les compilateurs, surtout avec leurs warnings
+activés, et les analyseurs de types (pour les codes interprétés), qui permettent
+de s'assurer de la cohérence des types, toujours sans avoir exécuté une ligne du code.
+
+Enfin, les analyseurs dynamiques vont étudier le code pendant son fonctionnement,
+souvent au prix d'une perte en performances (mémoire et CPU), pour chercher des erreurs
+logiques plus difficiles à détecter (typiquement les erreurs de mémoire).
+
+La dernière couche est bien sûr d'automatiser tout les outils choisis, au plus près 
+du développeur. Déjà, un lanceur comme [`doit`](https://pydoit.org/) ou 
+[`just`](https://just.systems/man/en/introduction.html) permet de lancer tous les outils
+de qualité choisis en une commande simple. Ensuite, nous pouvons tirer parti des hooks
+de Git pour lancer automatiquement ces outils lors de certains commandes, et typiquement
+lors du commit. Des utilitaires comme le fameux [`pre-commit`](https://pre-commit.com/)
+ou le plus récent [`prek`](https://prek.j178.dev/) permettent de configurer facilement
+les hooks de Git. Je conseille de n'utiliser lors du pre-commit que des outils dont le
+temps d'exécution est court (jusqu'à quelques secondes), pour éviter de perdre le fil
+à attendre la fin de tests longs au moment du commit.
 
 ## Nettoyer les tests
 
