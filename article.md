@@ -7,12 +7,12 @@ développeurs. Il s'agit du seul moyen de tester systématiquement et complètem
 éviter les régressions ou tout simplement ne pas avancer à l'aveugle.
 
 Mais une fois posé ce consensus, les ennuis commencent. Ecrire les tests est considéré
-comme une corvée que personne ne veut faire, et souvent repoussée à la fin du projet.
-Ensuite les tests sont trop souvent lents, fragiles, longs à maintenir, pas évident à 
-lancer, ne couvres pas tout... et on finit par s'habituer à des rapports de test
+comme une corvée que personne ne veut faire, souvent repoussée à la fin du projet.
+Ensuite les tests sont trop souvent lents, fragiles, longs à maintenir, pas évident à
+lancer, incomplets... et on finit par s'habituer à des rapports de test
 négatifs ("la CI est tout le temps rouge, mais c'est normal").
-Normalisation de la déviance, tout ça, et la navette Columbia finit par se crasher
-([true story](https://fr.wikipedia.org/wiki/Accident_de_la_navette_spatiale_Columbia)).
+On appelle ça la normalisation de la déviance, et ça a finit par faire se crasher
+[Columbia](https://fr.wikipedia.org/wiki/Accident_de_la_navette_spatiale_Columbia)).
 
 Bon d'accord quand les tests auto sont inutiles ou absents, plutôt qu'une navette c'est
 une app qui se crashe, mais le processus est le même.
@@ -31,21 +31,21 @@ Comme tout système logiciel, il demande du temps de développement et des comp�
 chères à acquérir. Ainsi, la suite de test constitue un investissement pour le projet
 principal, qui doit donc en retirer un bénéfice sur la qualité. Il est donc crucial
 de définir ce qui est attendu des tests. Comme il est toujours possible d'ajouter des
-tests, il faut aussi définir les moyens alloués aux tests, qui permettront d'arbitrer 
-plus tard entre ajouter des tests, ou ajouter des fonctionnalités. 
+tests, il faut aussi définir les moyens alloués aux tests, qui permettront d'arbitrer
+plus tard entre ajouter des tests, ou ajouter des fonctionnalités.
 
-Les tests automatisés, par opposition aux tests manuels, constituent tout ou partie de
-la suite de tests, et ont comme caractéristique de pouvoir être lancés automatiquement
-et systématiquement par le système de gestion de code, typiquement à chaque commit 
-pour une utilisation de GitHub ou GitLab. Ainsi, on s'assure contre la plupart des
-régressions, et cette information est apportée rapidement au développeur.
+Les tests automatisés, par opposition aux tests manuels, forment tout ou partie de
+la suite de tests, et peuvent être lancés automatiquement et systématiquement,
+typiquement à chaque commit, c'est la fameuse CI.
+Ainsi, on s'assure contre la plupart des régressions, et cette information est apportée
+rapidement au développeur.
 
 Les tests qui ne peuvent ou ne sont généralement pas automatisés comprennent par exemple
 les tests utilisateurs (dont tests d'ergonomie, tests A/B...), les tests de charges,
 les tests de performances, les tests de pénétration...
 
 Une fois de plus, les tests automatisés sont là pour apporter un certain niveau de
-confiance sur la qualité du code, pour atteindre les objectifs de qualité du projet,
+confiance sur la qualité du code, afin d'atteindre les objectifs de qualité du projet,
 dans les moyens alloués.
 
 ## Repartir de la base
@@ -76,8 +76,8 @@ Enfin, les analyseurs dynamiques vont étudier le code pendant son fonctionnemen
 souvent au prix d'une perte en performances (mémoire et CPU), pour chercher des erreurs
 logiques plus difficiles à détecter (typiquement les erreurs de mémoire).
 
-La dernière couche est bien sûr d'automatiser tout les outils choisis, au plus près 
-du développeur. Déjà, un lanceur comme [`doit`](https://pydoit.org/) ou 
+La dernière couche est bien sûr d'automatiser tout les outils choisis, au plus près
+du développeur. Déjà, un lanceur comme [`doit`](https://pydoit.org/) ou
 [`just`](https://just.systems/man/en/introduction.html) permet de lancer tous les outils
 de qualité choisis en une commande simple. Ensuite, nous pouvons tirer parti des hooks
 de Git pour lancer automatiquement ces outils lors de certains commandes, et typiquement
@@ -89,17 +89,15 @@ temps d'exécution est court (jusqu'à quelques secondes), pour éviter de perdr
 
 ## Nettoyer les tests
 
-Commençons par nettoyer les tests existants, car on peut bien sûr supprimer des tests.
-D'abord, les tests non fiables doivent être supprimés, parce qu'ils n'apportent pas 
+Continuons par nettoyer les tests existants, car on peut bien sûr supprimer des tests.
+D'abord, les tests non fiables doivent être retirés, parce qu'ils n'apportent pas
 l'information dont l'équipe a besoin : que le test passe ou pas, on n'en sait pas plus
 sur la qualité du code testé. Eventuellement, une fois stabilisés, ces tests pourront
 être réintégrés.
 
 Ensuite, les tests trop longs n'apportent pas l'information à temps aux développeurs.
-Ils doivent être soit supprimés, soit accélérés, soit séparés dans une seconde suite de
-tests si vraiment le test est nécessaire et le temps d'exécution incompressible.
-Et vraiment incompressible : il existe de multiples façon d'accélérer ses tests,
-comme nous le verrons plus tard.
+Ils peuvent être supprimés, accélérés, ou séparés dans une seconde suite de
+tests si vraiment le test est nécessaire et le temps d'exécution vraiment incompressible.
 Cette seconde suite de tests sera toujours automatisée, mais pas lancée à chaque commit,
 à une fréquence plus faible, comme une fois par jour (souvent la nuit),
 ou seulement juste avant fusion sur la branche principale. L'important est que le
@@ -111,8 +109,8 @@ Enfin, il ne faut pas hésiter à élaguer la suite de tests : certains tests ne
 pertinents, parce que trop vieux, trop spécifiques, trop couplés ou qui testent trop peu
 de code.
 
-## 
-
 ## Accélérer les tests
 
+
+## Compléter les tests
 
