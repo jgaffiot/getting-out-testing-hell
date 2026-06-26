@@ -1,10 +1,9 @@
-"""
-Refactored OrderService — the same business logic, but now testable.
+"""Refactored OrderService - the same business logic, but now testable.
 
 Key changes vs the original:
 1. Dependencies injected via __init__ (PaymentClient, EmailClient, Session)
 2. `datetime.utcnow` replaced by an injectable `now` callable
-3. `compute_total()` extracted as a pure function — no I/O
+3. `compute_total()` extracted as a pure function - no I/O
 """
 
 from collections.abc import Callable
@@ -28,24 +27,32 @@ PROMO_CODES: dict[str, Decimal] = {
 
 
 def compute_total(
-    prices: list[tuple[Decimal, int]], promo_code: str | None = None
+    prices: list[tuple[Decimal, int]],
+    promo_code: str | None = None,
 ) -> Decimal:
-    """Pure function — no DB, no I/O, trivially unit-testable."""
+    """Pure function - no DB, no I/O, trivially unit-testable."""
     total = sum(price * quantity for price, quantity in prices)
     if promo_code:
-        discount = PROMO_CODES.get(promo_code.upper(), Decimal("0"))
+        discount = PROMO_CODES.get(promo_code.upper(), Decimal(0))
         total = total * (1 - discount)
     return Decimal(str(total))
 
 
 class OrderService:
+    """Order business logic with all external collaborators injected.
+
+    Persistence, payment and email clients, and the ``now`` clock are passed
+    in so the service can be exercised with fakes and a controllable time.
+    """
+
     def __init__(
         self,
         db: Session,
         payment: PaymentClient,
         email: EmailClient,
         now: Callable[[], datetime] = datetime.utcnow,
-    ):
+    ) -> None:
+        """Store the injected DB session, payment/email clients and clock."""
         self._db = db
         self._payment = payment
         self._email = email
@@ -58,6 +65,11 @@ class OrderService:
         card_token: str,
         promo_code: str | None = None,
     ) -> Order:
+        """Validate, charge, persist and confirm a new order for a user.
+
+        Raises ValueError on unknown/inactive users, too many items, unknown
+        books or insufficient stock.
+        """
         user = self._db.query(User).filter(User.id == user_id).first()
         if not user:
             raise ValueError(f"User {user_id} not found")
@@ -66,7 +78,7 @@ class OrderService:
 
         if len(items) > MAX_ITEMS_PER_ORDER:
             raise ValueError(
-                f"Cannot order more than {MAX_ITEMS_PER_ORDER} different items"
+                f"Cannot order more than {MAX_ITEMS_PER_ORDER} different items",
             )
 
         prices: list[tuple[Decimal, int]] = []
@@ -78,19 +90,23 @@ class OrderService:
                 raise ValueError(f"Book {item['book_id']} not found")
             if book.stock < item["quantity"]:
                 raise ValueError(
-                    f"Insufficient stock for '{book.title}': {book.stock} available"
+                    f"Insufficient stock for '{book.title}': {book.stock} available",
                 )
             prices.append((Decimal(str(book.price)), item["quantity"]))
             order_items.append(
                 OrderItem(
-                    book_id=book.id, quantity=item["quantity"], unit_price=book.price
-                )
+                    book_id=book.id,
+                    quantity=item["quantity"],
+                    unit_price=book.price,
+                ),
             )
             book.stock -= item["quantity"]
 
         total = compute_total(prices, promo_code)
         charge = self._payment.charge(
-            total, card_token, description=f"Order for {user.email}"
+            total,
+            card_token,
+            description=f"Order for {user.email}",
         )
 
         order = Order(
@@ -114,6 +130,11 @@ class OrderService:
         return order
 
     def cancel_order(self, order_id: int) -> Order:
+        """Refund an order, restore stock and notify the user.
+
+        Raises ValueError if the order is unknown, not cancellable, or past
+        the cancellation window.
+        """
         order = self._db.query(Order).filter(Order.id == order_id).first()
         if not order:
             raise ValueError(f"Order {order_id} not found")

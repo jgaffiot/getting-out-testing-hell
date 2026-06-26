@@ -9,7 +9,7 @@ import requests
 
 BASE_URL = "http://localhost:8000"
 
-# Global variable shared between tests — tests must run in order!
+# Global variable shared between tests - tests must run in order!
 created_book_id = None
 
 
@@ -43,7 +43,7 @@ def test_get_book_not_found():
 
 def test_list_books():
     response = requests.get(f"{BASE_URL}/books/")
-    # Only checks it doesn't crash — no assertion on content
+    # Only checks it doesn't crash - no assertion on content
     assert response.status_code == 200
 
 
@@ -64,7 +64,7 @@ def test_create_book_invalid_price():
             "stock": 0,
         },
     )
-    # Magic number — why 422?
+    # Magic number - why 422?
     assert response.status_code == 422
 
 
@@ -94,7 +94,7 @@ def test_duplicate_isbn():
 
 
 def test_delete_book():
-    # Deletes the book created in test_create_book — order matters!
+    # Deletes the book created in test_create_book - order matters!
     response = requests.delete(f"{BASE_URL}/books/{created_book_id}")
     assert response.status_code == 204
 

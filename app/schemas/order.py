@@ -20,6 +20,8 @@ class OrderItemResponse(BaseModel):
     quantity: int
     unit_price: Decimal
 
+    # For compatibility with the ORM
+    # See https://pydantic.dev/docs/validation/latest/concepts/models/#arbitrary-class-instances
     model_config = {"from_attributes": True}
 
 

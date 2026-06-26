@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from app.clients.email_client import EmailClient
-from app.clients.payment_client import PaymentClient, PaymentError
+from app.clients.payment_client import PaymentClient
 from app.config import CANCELLATION_WINDOW_HOURS, MAX_ITEMS_PER_ORDER
 from app.database import SessionLocal
 from app.models.book import Book
@@ -17,7 +17,7 @@ PROMO_CODES: dict[str, Decimal] = {
 
 
 class OrderService:
-    # Instantiates its own dependencies — cannot be overridden in tests
+    # Instantiates its own dependencies - hard to override in tests
     def __init__(self):
         self._payment = PaymentClient()
         self._email = EmailClient()
@@ -29,7 +29,7 @@ class OrderService:
         card_token: str,
         promo_code: str | None = None,
     ) -> Order:
-        db = SessionLocal()  # creates its own session — cannot inject a test session
+        db = SessionLocal()  # creates its own session - cannot inject a test session
         try:
             user = db.query(User).filter(User.id == user_id).first()
             if not user:
@@ -110,7 +110,7 @@ class OrderService:
             if order.status != OrderStatus.CONFIRMED:
                 raise ValueError(f"Cannot cancel order in status {order.status}")
 
-            # Uses datetime.utcnow() directly — time-dependent logic is untestable
+            # Uses datetime.utcnow() directly - time-dependent logic is untestable
             deadline = order.created_at + timedelta(hours=CANCELLATION_WINDOW_HOURS)
             if datetime.utcnow() > deadline:
                 raise ValueError("Cancellation window has expired (1 hour after order)")
@@ -143,7 +143,7 @@ class OrderService:
     def calculate_order_total(
         self, items: list[dict], promo_code: str | None = None
     ) -> Decimal:
-        # Pure calculation buried in a class that also does I/O — hard to test in isolation
+        # Pure calculation buried in a class that also does I/O - hard to test in isolation
         db = SessionLocal()
         try:
             total = Decimal("0")

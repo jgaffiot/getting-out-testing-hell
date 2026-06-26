@@ -18,12 +18,12 @@ class TestOrderServiceCalculation:
     def test_promo_code_save10(self):
         # Calls calculate_order_total which opens a real DB connection
         service = OrderService()
-        # This will raise OperationalError if no DB is running — no clear error message
+        # This will raise OperationalError if no DB is running - no clear error message
         total = service.calculate_order_total(
             items=[{"book_id": 1, "quantity": 1}],
             promo_code="SAVE10",
         )
-        # Only checks it's not None — would pass even if discount wasn't applied
+        # Only checks it's not None - would pass even if discount wasn't applied
         assert total is not None
 
     def test_promo_codes_are_defined(self):
@@ -78,7 +78,7 @@ class TestOrderCreation:
             card_token="tok_visa",
         )
 
-        # Only verifies the mock was called — not that business logic is correct
+        # Only verifies the mock was called - not that business logic is correct
         mock_payment.charge.assert_called_once()
 
     @patch("app.services.order_service.SessionLocal")
@@ -87,7 +87,7 @@ class TestOrderCreation:
     def test_create_order_sends_email(
         self, mock_email_cls, mock_payment_cls, mock_session_cls
     ):
-        # Copy-paste of the above setup — no shared fixture
+        # Copy-paste of the above setup - no shared fixture
         mock_session = MagicMock()
         mock_session_cls.return_value = mock_session
 
@@ -120,7 +120,7 @@ class TestOrderCreation:
             card_token="tok_visa",
         )
 
-        # Checks the mock was called — does not check email content or recipient
+        # Checks the mock was called - does not check email content or recipient
         mock_email.send.assert_called_once()
 
     @patch("app.services.order_service.SessionLocal")
@@ -149,7 +149,7 @@ class TestOrderCreation:
 
 
 def test_order_service_instantiation():
-    # Instantiating the service tries to connect to the payment API URL — but doesn't fail yet
+    # Instantiating the service tries to connect to the payment API URL - but doesn't fail yet
     # This test always passes and asserts nothing meaningful
     service = OrderService()
     assert service is not None

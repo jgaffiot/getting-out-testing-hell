@@ -1,6 +1,6 @@
 import os
 
-# Config scattered across the module — some from env, some hardcoded
+# Config scattered across the module - some from env, some hardcoded
 DATABASE_URL = os.environ.get(
     "DATABASE_URL", "postgresql://bookstore:bookstore@localhost:5432/bookstore"
 )
