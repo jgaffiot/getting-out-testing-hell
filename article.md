@@ -109,8 +109,40 @@ Enfin, il ne faut pas hésiter à élaguer la suite de tests : certains tests ne
 pertinents, parce que trop vieux, trop spécifiques, trop couplés ou qui testent trop peu
 de code.
 
+## Rendre le code testable
+
+Les problèmes de test les plus sérieux sont le plus souvent dus au code à tester : trop couplé et pas assez observable,
+il oblige le test à mettre en place tout un environnement, à lancer tout le code d'un coup, à jouer tout un scénario
+complexe pour atteindre l'état initial dans lequel le test pourra enfin être lancé, et à passer par des moyens détournés
+ou fragiles (analyse des logs...) pour savoir si le test a réussi.
+
+La première chose est d'isoler au maximum les effets de bods, en particulier les entrées/sorties, pour pouvoir tester
+le code spécifique au projet et la logique métier indépendament. Pour tous les projets qui ne sont pas de simples
+"passe-plats", un maximum de code doit être testable sans préparation particulière, juste en exécutant le code.
+
+## Gérer ses effets de bords
+
 ## Accélérer les tests
 
+De nombreuses pistes peuvent permettre d'accélérer les tests :
+
+- modulariser le code et éventuellement le séparer en plusieurs libs. Ainsi, il y a moins de code, d'entrées, de cas
+  limites à tester, et chaque lib est validée indépendament.
+- préparer les artefacts (libs, exécutables, images...) pour le test (et la compilation si nécessaire) pour qu'ils
+  soient prêts à l'emploi et en cache. Utiliser une lib précompilée est plus rapide que la recompiler avec tout le
+  projet. Si un test a besoin d'un conteneur, l'image doit être disponible en cache et prête à l'emploi dès que le 
+  conteneur est lancé (pas d'entrypoint qui finit la mise en place par exemple).
+- profiler ses tests, pour d'abord avoir le temps par test, et ensuite savoir où les tests longs passent leur temps.
+  Cette étape est essentielle pour ne pas avancer à l'aveugle.
+- paralléliser les tests (mais les workers de CI peuvent n'avoir qu'un seul coeur)
+- factoriser la mise en place et le nettoyage entre plusieurs tests
+- éviter d'attendre pendant un test (`sleep(...)`), à la place réagir quand l'action est terminée.
+  Il faut parfois modifier le code pour qu'il reporte son état (code de retour, log, variable interne...) ou permete
+  au test de l'obtenir avec une nouvelle API.
+- réduire la quantité de valeurs différentes testées, pour se concentrer sur les valeurs attendues et les cas limites.
+- focaliser les tests sur une séquence claire given/when/then, en évitant d'enchainer trop d'actions
+- optimiser le code dont le test est irréductiblement long. Parfois le problème vient du code. 
+- lancer sélectivement les tests selon le code modifié, facile quand le code est bien structuré et modulaire
 
 ## Compléter les tests
 
