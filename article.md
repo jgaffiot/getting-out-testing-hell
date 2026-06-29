@@ -111,38 +111,115 @@ de code.
 
 ## Rendre le code testable
 
-Les problèmes de test les plus sérieux sont le plus souvent dus au code à tester : trop couplé et pas assez observable,
-il oblige le test à mettre en place tout un environnement, à lancer tout le code d'un coup, à jouer tout un scénario
-complexe pour atteindre l'état initial dans lequel le test pourra enfin être lancé, et à passer par des moyens détournés
-ou fragiles (analyse des logs...) pour savoir si le test a réussi.
+Les problèmes de test les plus sérieux sont le plus souvent dus au code à tester : 
+trop couplé et pas assez observable, il oblige le test à mettre en place tout un 
+environnement, à lancer tout le code d'un coup, à jouer tout un scénario complexe pour 
+atteindre l'état initial dans lequel le test pourra enfin être lancé, et à passer par
+des moyens détournés ou fragiles (analyse des logs...) pour savoir si le test a réussi.
 
-La première chose est d'isoler au maximum les effets de bods, en particulier les entrées/sorties, pour pouvoir tester
-le code spécifique au projet et la logique métier indépendament. Pour tous les projets qui ne sont pas de simples
-"passe-plats", un maximum de code doit être testable sans préparation particulière, juste en exécutant le code.
+La première chose est d'isoler au maximum les effets de bods, en particulier les
+entrées/sorties, pour pouvoir tester le code spécifique au projet et la logique métier
+indépendament. Pour tous les projets qui ne sont pas de simples "passe-plats", un
+maximum de code doit être testable sans préparation particulière, juste en l'exécutant.
 
-## Gérer ses effets de bords
+Trions ensuite les effets de bord en 3 catégories : trous noirs, fontaine blanche, et
+le reste. Un trou noir est en écriture seul, on ne peut qu'y jeter des données qui sont
+immédiatemement perdues. On trouve dans cette catégorie les systèmes de log et de
+télémétrie. Une fontaine blanche, l'inverse théorique d'un trou noir, est en lecture
+seule et ne peut être qu'initialisée, une seule fois. On trouve dans cette catégorie
+le système de configuration, qui réconcilie variables d'environnement, fichiers, 
+ligne de commande... et mets le résultat à disposition du reste du code.
+
+Trous noirs et fontaines blanches peuvent avoir une durée de vie équivalente à celle
+du programme entier et une portée globale. Ce sont les seuls effets de bord qu'on peut
+tolérer à travers toute la base de code. Bien identifiés, une mise en place commune à
+tous les test permettra de les gérer une fois pour toute.
+
+Tous les autres effets de bords doivent être isolés, et si possible injectés dans le
+code métier propre à leur utilisation, plutôt que détenu par le code métier. En effet,
+une dépendance injectée donne toute liberté au test pour déconnecter l'effet de bord
+et isoler le code, alors qu'un couplage fort rend le test difficile, surtout avec
+les langages statiques.
+
+```
+# Difficile à tester
+class MyClassWithInternalConnection
+private:
+    HttpClient http_client
+public:
+    Constructor(host, port) { http_client = HttpClient(host, port) }
+
+# Facile à tester
+class MyClassWithInjectedConnection
+private:
+    HttpClient http_client
+public:
+    Constructor(client) { http_client = client }
+```
+
+## Prendre en main son framework de test
+
+Tous les principaux langages proposent un ou plusieurs framework de test, qui apportent
+leur lot de fonctionnalités en plus de faciliter l'écriture des tests, comme :
+
+- lancement depuis un point unique
+- organisation en suite de tests, suite de suite...
+- gestion de l'environnement, de l'OS
+- interception de l'entrée standard et des sorties standards
+- rassemblement et structuration des résultats des tests
+- setup/teardown : une paire de fonction spéciale pour respectivement créer et détruire
+  l'état initial d'un test
+- fixture : une fonction qui "fixe" l'état initial pour un test (généralisation du
+  setup)
+- assertions pour comparer des résultats à des valeurs attendues, ou vérifier un
+  comportement attendu (exception, appel de fonction...)
+- injection de substitut ou mock
+- parallélisation, plugins...
+
+Utiliser un framework de test apporte donc énormément, au prix du temps de prise en 
+main du framework.
+
+L'injection de substitut mérite un point d'attention : il s'agit de remplacer
+sélectivement du code avec un effet de bord par du code propre au test,
+en réimplémentant l'interface du code original.
+Par exemple, un object de connexion à une base de données peut être remplacé par un
+objet ne faisant rien, on renvoyant immédiatement une valeur fixée.
+Le substitut peut être développé spécifiquement pour émuler un comportement complexe,
+mais avec un retour instantané et répétable. Il peut aussi être complétement vide,
+mais permettre de vérifier que l'interface a été appelée, avec quels arguments...
+Certains frameworks permettent même de créer des substituts sans déclarer l'interface
+du tout, l'interface étant créée à la volée, pour juste débrancher un effet de bord.
 
 ## Accélérer les tests
 
 De nombreuses pistes peuvent permettre d'accélérer les tests :
 
-- modulariser le code et éventuellement le séparer en plusieurs libs. Ainsi, il y a moins de code, d'entrées, de cas
-  limites à tester, et chaque lib est validée indépendament.
-- préparer les artefacts (libs, exécutables, images...) pour le test (et la compilation si nécessaire) pour qu'ils
-  soient prêts à l'emploi et en cache. Utiliser une lib précompilée est plus rapide que la recompiler avec tout le
-  projet. Si un test a besoin d'un conteneur, l'image doit être disponible en cache et prête à l'emploi dès que le 
+- modulariser le code et éventuellement le séparer en plusieurs libs. Ainsi, il y a
+  moins de code, d'entrées, de cas limites à tester, et chaque lib est validée
+  indépendament.
+- préparer les artefacts (libs, exécutables, images...) pour le test (et la compilation
+  si nécessaire) pour qu'ils soient prêts à l'emploi et en cache. Utiliser une lib
+  précompilée est plus rapide que la recompiler avec tout le projet. Si un test a besoin
+  d'un conteneur, l'image doit être disponible en cache et prête à l'emploi dès que le 
   conteneur est lancé (pas d'entrypoint qui finit la mise en place par exemple).
-- profiler ses tests, pour d'abord avoir le temps par test, et ensuite savoir où les tests longs passent leur temps.
+- profiler ses tests, pour d'abord avoir le temps par test, et ensuite savoir où les
+  tests longs passent leur temps.
   Cette étape est essentielle pour ne pas avancer à l'aveugle.
 - paralléliser les tests (mais les workers de CI peuvent n'avoir qu'un seul coeur)
 - factoriser la mise en place et le nettoyage entre plusieurs tests
-- éviter d'attendre pendant un test (`sleep(...)`), à la place réagir quand l'action est terminée.
-  Il faut parfois modifier le code pour qu'il reporte son état (code de retour, log, variable interne...) ou permete
-  au test de l'obtenir avec une nouvelle API.
-- réduire la quantité de valeurs différentes testées, pour se concentrer sur les valeurs attendues et les cas limites.
-- focaliser les tests sur une séquence claire given/when/then, en évitant d'enchainer trop d'actions
-- optimiser le code dont le test est irréductiblement long. Parfois le problème vient du code. 
-- lancer sélectivement les tests selon le code modifié, facile quand le code est bien structuré et modulaire
+- éviter d'attendre pendant un test (`sleep(...)`), à la place réagir quand l'action est
+  terminée. Il faut parfois modifier le code pour qu'il reporte son état (code de
+  retour, log, variable interne...) ou permette au test de l'obtenir avec une nouvelle
+  API.
+- réduire la quantité de valeurs différentes testées, pour se concentrer sur les valeurs
+  attendues et les cas limites.
+- focaliser les tests sur une séquence claire given/when/then, en évitant d'enchainer
+  trop d'actions
+- optimiser le code dont le test est irréductiblement long. Parfois le problème vient du
+  code. 
+- lancer sélectivement les tests selon le code modifié, facile quand le code est bien
+  structuré et modulaire
 
 ## Compléter les tests
 
+## Utiliser l'IA à bon escient
