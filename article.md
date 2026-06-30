@@ -42,11 +42,11 @@ typiquement à chaque commit, c'est la fameuse CI.
 Ainsi, on s'assure contre la plupart des régressions, et cette information est apportée
 rapidement au développeur.
 
-Les tests qui ne peuvent ou ne sont généralement pas automatisés comprennent par exemple
+Certains tests restent le plus souvent manuels, par exemple
 les tests utilisateurs (dont tests d'ergonomie, tests A/B...), les tests de charges,
 les tests de performances, les tests de pénétration...
 
-Une fois de plus, les tests automatisés sont là pour apporter un certain niveau de
+Les tests automatisés sont là pour apporter un certain niveau de
 confiance sur la qualité du code, afin d'atteindre les objectifs de qualité du projet,
 dans les moyens alloués.
 
