@@ -100,6 +100,31 @@ le déclenchement à partir de l'heure rélle, la (non-)synchronisation de code 
 parallèle (multi threading, asynchrone...), la dépendance a des processus ou des API
 externes sont les causes les plus probables.
 
+Par exemple, ce test échoue de façon imprévisible, car il dépend de l'heure réelle :
+
+```python
+# Fragile : dépend de l'horloge système... et reste bloqué une heure !
+def test_token_expiration():
+    token = create_token()       # valable "1 heure"
+    assert token.is_valid()      # faux si le test tourne à 23h59m59s
+    time.sleep(3601)
+    assert not token.is_valid()
+```
+
+La solution est d'injecter l'horloge pour la contrôler depuis le test, ce qui le rend
+à la fois fiable et instantané :
+
+```python
+# Fiable : le temps est injecté, donc maîtrisé
+def test_token_expiration():
+    clock = FakeClock(now=datetime(2025, 1, 1, 12, 0))
+    token = create_token(clock=clock, ttl=timedelta(hours=1))  # refacto de create_token
+    assert token.is_valid()
+
+    clock.advance(timedelta(hours=1, seconds=1))   # on avance le temps sans attendre
+    assert not token.is_valid()
+```
+
 Ensuite, les tests trop longs n'apportent pas l'information à temps aux développeurs.
 Ils peuvent être supprimés, accélérés, ou séparés dans une seconde suite de
 tests si vraiment le test est nécessaire et le temps d'exécution vraiment incompressible.
@@ -201,6 +226,27 @@ un effet de bord.
 De nombreux plugins ou librairies proposent des substituts clés en main pour les cas
 les plus courants : connexion, temps, aléatoire, base de données, logs...
 
+En combinant ces fonctionnalités, un test reste court et lisible. La structure
+given/when/then (« étant donné / quand / alors ») sépare nettement la préparation,
+l'action testée et la vérification, ce qui en fait une documentation exécutable :
+
+```python
+def test_alerte_envoyee_si_solde_negatif():
+    # given : un compte à découvert et un service d'envoi de mail substitué
+    mailer = FakeMailer()
+    compte = Compte(solde=-50, mailer=mailer)
+
+    # when : on déclenche la vérification du découvert
+    compte.verifier_decouvert()
+
+    # then : une alerte, et une seule, a été envoyée au titulaire
+    assert mailer.envois == [("alerte_decouvert", compte.titulaire)]
+```
+
+Ici le substitut `FakeMailer` n'envoie aucun vrai mail : il se contente d'enregistrer
+les appels, ce qui permet d'affirmer que l'alerte a bien été déclenchée, et une seule
+fois, sans dépendre d'un serveur de messagerie.
+
 ## Accélérer les tests
 
 De nombreuses pistes peuvent permettre d'accélérer les tests :
@@ -232,6 +278,23 @@ De nombreuses pistes peuvent permettre d'accélérer les tests :
   de la couverture ou la vérification de l'intégrité de la mémoire
 - lancer sélectivement les tests selon le code modifié, facile quand le code est bien
   structuré et modulaire
+
+Le remplacement d'une attente fixe par une attente conditionnelle illustre bien ce
+gain : au lieu de dormir « assez longtemps » en espérant que l'action soit terminée
+(lent, et fragile si la machine est chargée), on rend la main dès que la condition est
+remplie.
+
+```python
+# Lent et fragile : on attend une durée arbitraire
+start_job()
+time.sleep(5)
+assert result_file.exists()
+
+# Rapide et fiable : on réagit dès que la condition est vraie
+job = start_job()
+wait_until(lambda: job.is_done(), timeout=5)   # sort dès que c'est prêt
+assert result_file.exists()
+```
 
 ## Compléter les tests
 
