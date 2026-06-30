@@ -159,12 +159,13 @@ public:
 
 ## Prendre en main son framework de test
 
-Tous les principaux langages proposent un ou plusieurs framework de test, qui apportent
+Tous les principaux langages ont un ou plusieurs framework de test, qui apportent
 leur lot de fonctionnalités en plus de faciliter l'écriture des tests, comme :
 
 - lancement depuis un point unique
 - organisation en suite de tests, suite de suite...
-- gestion de l'environnement, de l'OS
+- gestion de l'environnement, de l'OS, des signaux
+- fichiers et dossiers temporaires
 - interception de l'entrée standard et des sorties standards
 - rassemblement et structuration des résultats des tests
 - setup/teardown : une paire de fonction spéciale pour respectivement créer et détruire
@@ -184,18 +185,23 @@ sélectivement du code avec un effet de bord par du code propre au test,
 en réimplémentant l'interface du code original.
 Par exemple, un object de connexion à une base de données peut être remplacé par un
 objet ne faisant rien, on renvoyant immédiatement une valeur fixée.
-Le substitut peut être développé spécifiquement pour émuler un comportement complexe,
-mais avec un retour instantané et répétable. Il peut aussi être complétement vide,
-mais permettre de vérifier que l'interface a été appelée, avec quels arguments...
-Certains frameworks permettent même de créer des substituts sans déclarer l'interface
-du tout, l'interface étant créée à la volée, pour juste débrancher un effet de bord.
+
+Le substitut peut être développé spécifiquement pour émuler un comportement complexe
+ou aléatoire, mais avec un retour instantané et répétable.
+Il peut aussi être complétement vide, mais permettre de vérifier que l'interface a été
+appelée, avec quels arguments...
+Certains frameworks de langages dynamiques permettent même de créer des substituts sans
+déclarer l'interface du tout, l'interface étant créée à la volée, pour juste débrancher
+un effet de bord.
+De nombreux plugins ou librairies proposent des substituts clés en main pour les cas
+les plus courants : connexion, temps, aléatoire, base de données, logs...
 
 ## Accélérer les tests
 
 De nombreuses pistes peuvent permettre d'accélérer les tests :
 
-- modulariser le code et éventuellement le séparer en plusieurs libs. Ainsi, il y a
-  moins de code, d'entrées, de cas limites à tester, et chaque lib est validée
+- modulariser le code et éventuellement le séparer en plusieurs librairies. Ainsi, il y
+  a moins de code, d'entrées, de cas limites à tester, et chaque librairie est validée
   indépendament.
 - préparer les artefacts (libs, exécutables, images...) pour le test (et la compilation
   si nécessaire) pour qu'ils soient prêts à l'emploi et en cache. Utiliser une lib
@@ -216,10 +222,64 @@ De nombreuses pistes peuvent permettre d'accélérer les tests :
 - focaliser les tests sur une séquence claire given/when/then, en évitant d'enchainer
   trop d'actions
 - optimiser le code dont le test est irréductiblement long. Parfois le problème vient du
-  code. 
+  code.
+- activer sélectivement certaines options qui ralentissent les tests, comme la mesure
+  de la couverture ou la vérification de l'intégrité de la mémoire
 - lancer sélectivement les tests selon le code modifié, facile quand le code est bien
   structuré et modulaire
 
 ## Compléter les tests
 
+Une fois les tests existants remis en ordre de marche, il faut vérifier que la suite de
+test atteint son objectif, et en particulier qu'il ne reste pas de gros trou dans la
+couverture de test. Si ce n'est pas déjà fait, il faut ajouter la mesure de la
+couverture à son framework. Attention, mesurer la couverture a tendance à ralentir les
+tests, parfois beaucoup, et il faut alors prévoir une option pour l'activer
+sélectivement.
+
+La couverture de test doit déjà être à peu près homogène sur la base de code, et donc la
+première chose à rechercher est une partie du code non testée (fichier complet, classe,
+fonction...). Ensuite, la couverture doit permettre de vérifier que la logique métier
+(sans effets de bord) est très bien testée, avec une couverture tendant vers 100%.
+Enfin, la couverture doit être analysée par rapport aux objectifs et ressources : est-ce
+que le code non testé peut l'être facilement ? Est-il réutilisé massivement dans toute
+la base de code ? Est-il critique ? Est-ce de la logique métier ?
+
+Une fois la couverture analysée, c'est le moment de revenir sur les tests des
+entrées/sorties, dont la couverture de test n'est pas la métrique pertinente. Il est en
+effet facile de les couvrir par des tests qui déconnectent tellement d'effets de bord
+que le test n'apporte plus beaucoup de garantie. Il faut plutôt vérifier que les cas 
+normaux, limites et d'erreurs sont testés, vérifier que le lien avec le reste du système
+soit réellement testé à un moment ou un autre (connexion à l'API, base de données...),
+ou envisager un contrat de communication à valider (OpenAPI par exemple).
+
+Il n'y a pas de chiffre précis de taux de couverture à atteindre, surtout qu'il est 
+relativement facile de biaiser ce chiffre en déclarant des lignes hors couverture ou en
+abusant des substituts. De plus, les derniers pourcents sont bien plus difficiles à
+atteindre que les premiers. Un chiffre de 80% est une bonne base de réflexion, les
+projets de qualité étant au-dessus. Il est plus important de suivre la tendance : au fur
+et à mesure que le projet évolue, la couverture ne doit pas reculer, mais monter (même
+lentement) au fur et à mesure que des bugs sont corrigés et donc des tests ajoutés.
+Ajouter à ses pipelines de test la vérification que la couverture ne recule pas
+empêche en particulier d'ajouter des fonctionnalités sans leurs tests.
+
 ## Utiliser l'IA à bon escient
+
+Pour toutes ces tâches, plutôt rébarbatives et vues comme une perte de temps par rapport
+à l'avancée du projet, l'IA est un auxiliaire précieux. Il peut être très tentant de 
+de déléguer tout le problème à l'IA (et les derniers modèles feront un bon travail).
+Mais les tests sont aussi le système qui garantit le fonctionnement du code,
+et qui permettent au développeur d'engager sa responsabilité sur le code livré.
+Est-ce que le test généré teste vraiment les points importants ? Ou est-ce qu'il s'agit
+juste d'un spaghetti de substituts qui ne teste en fait rien du tout ? Dans tous les cas
+la responsabilité est sur les épaules du développeur.
+
+Selon les développeurs et les projets, plusieurs stratégies sont possibles : générer
+mais relire soigneusement, travailler par étape à partir des spécifications, écrire
+manuellement les tests ou au moins les tests principaux, utiliser une IA vérificatrice
+après la génération... 
+
+Par délà l'appropriation des tests générés par le développeur, l'IA est surtout une
+opportunité en or d'aller plus loin dans les tests : test de performances et
+optimisation, test d'interface, fuzzy testing, mutation testing... Autant de stratégies
+de test avancées qui deviennent accessible à tous les projets.
