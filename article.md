@@ -6,13 +6,15 @@ La nécessité d'écrire des tests automatisés est maintenant bien établie che
 développeurs. Il s'agit du seul moyen de tester systématiquement et complètement, pour
 éviter les régressions ou tout simplement ne pas avancer à l'aveugle.
 
-Mais une fois posé ce consensus, les ennuis commencent. Ecrire les tests est considéré
+Mais une fois posé ce consensus, les ennuis commencent. Écrire les tests est considéré
 comme une corvée que personne ne veut faire, souvent repoussée à la fin du projet.
 Ensuite les tests sont trop souvent lents, fragiles, longs à maintenir, pas évident à
 lancer, incomplets... et on finit par s'habituer à des rapports de test
 négatifs ("la CI est tout le temps rouge, mais c'est normal").
-On appelle ça la normalisation de la déviance, et ça a finit par faire se crasher
-[Columbia](https://fr.wikipedia.org/wiki/Accident_de_la_navette_spatiale_Columbia)).
+On appelle ça la normalisation de la déviance, et ça peut conduire à la catastrophe,
+comme faire se crasher
+[Challenger](https://fr.wikipedia.org/wiki/Accident_de_la_navette_spatiale_Challenger)
+*et* [Columbia](https://fr.wikipedia.org/wiki/Accident_de_la_navette_spatiale_Columbia).
 
 Bon d'accord quand les tests auto sont inutiles ou absents, plutôt qu'une navette c'est
 une app qui se crashe, mais le processus est le même.
@@ -51,15 +53,15 @@ dans les moyens alloués.
 ## Repartir de la base
 
 Les tests font partie de la boite à outil pour atteindre l'objectif de qualité, mais ils
-ne sont pas seuls. Nous allons donc déployer plusieurs couches successives d'outils
-de qualité.
+ne sont pas seuls. Plusieurs couches successives d'outils sont nécessaires
+pour intercepter les différents problèmes de qualité.
 
-La première est un formatteur de code, qui permet d'uniformiser le code. Les avantages
-sont de faciliter la lecture du code, qui en se présentant toujours sous la même forme
-sera perçu plus facilement par le cerveau, de diminuer la charge du développeur,
-qui n'a plus à aligner son code à la main, et de nettoyer les comparaisons de code de
-toutes les différences de caractères d'espacement, ce qui facilite grandement les
-revues de code.
+La première couche est un formatteur de code, qui permet d'uniformiser le code. Les
+avantages sont de faciliter la lecture du code, qui en se présentant toujours sous la
+même forme sera perçu plus facilement par le cerveau, de diminuer la charge du
+développeur, qui n'a plus à aligner son code à la main, et de nettoyer les comparaisons
+de code de toutes les différences de caractères d'espacement, ce qui facilite grandement
+les revues de code.
 
 La seconde couche est constituée de logiciels d'analyse, et en premier lieu des outils
 d'analyse statique. Ces derniers n'exécutent pas le code (d'où le nom de "statique")
@@ -83,17 +85,20 @@ de qualité choisis en une commande simple. Ensuite, nous pouvons tirer parti de
 de Git pour lancer automatiquement ces outils lors de certains commandes, et typiquement
 lors du commit. Des utilitaires comme le fameux [`pre-commit`](https://pre-commit.com/)
 ou le plus récent [`prek`](https://prek.j178.dev/) permettent de configurer facilement
-les hooks de Git. Je conseille de n'utiliser lors du pre-commit que des outils dont le
-temps d'exécution est court (jusqu'à quelques secondes), pour éviter de perdre le fil
-à attendre la fin de tests longs au moment du commit.
+les hooks de Git. Pour éviter de perdre le fil à attendre la fin de tests longs au
+moment du commit, n'utiliser lors du pre-commit que des outils dont le temps d'exécution
+est court (jusqu'à quelques secondes).
 
 ## Nettoyer les tests
 
 Continuons par nettoyer les tests existants, car on peut bien sûr supprimer des tests.
 D'abord, les tests non fiables doivent être retirés, parce qu'ils n'apportent pas
 l'information dont l'équipe a besoin : que le test passe ou pas, on n'en sait pas plus
-sur la qualité du code testé. Eventuellement, une fois stabilisés, ces tests pourront
-être réintégrés.
+sur la qualité du code testé. Ces tests pourront être réintégrés une fois stabilisés,
+ce qui suppose d'identifier la cause de l'instabilité. Le tirage de nombre aléatoire,
+le déclenchement à partir de l'heure rélle, la (non-)synchronisation de code exécuté en
+parallèle (multi threading, asynchrone...), la dépendance a des processus ou des API
+externes sont les causes les plus probables.
 
 Ensuite, les tests trop longs n'apportent pas l'information à temps aux développeurs.
 Ils peuvent être supprimés, accélérés, ou séparés dans une seconde suite de
@@ -111,24 +116,24 @@ de code.
 
 ## Rendre le code testable
 
-Les problèmes de test les plus sérieux sont le plus souvent dus au code à tester : 
-trop couplé et pas assez observable, il oblige le test à mettre en place tout un 
-environnement, à lancer tout le code d'un coup, à jouer tout un scénario complexe pour 
+Les problèmes de test les plus sérieux sont le plus souvent dus au code à tester :
+trop couplé et pas assez observable, il oblige le test à mettre en place tout un
+environnement, à lancer tout le code d'un coup, à jouer tout un scénario complexe pour
 atteindre l'état initial dans lequel le test pourra enfin être lancé, et à passer par
 des moyens détournés ou fragiles (analyse des logs...) pour savoir si le test a réussi.
 
-La première chose est d'isoler au maximum les effets de bods, en particulier les
+La première chose est d'isoler au maximum les effets de bord, en particulier les
 entrées/sorties, pour pouvoir tester le code spécifique au projet et la logique métier
-indépendament. Pour tous les projets qui ne sont pas de simples "passe-plats", un
+indépendamment. Pour tous les projets qui ne sont pas de simples "passe-plats", un
 maximum de code doit être testable sans préparation particulière, juste en l'exécutant.
 
 Trions ensuite les effets de bord en 3 catégories : trous noirs, fontaine blanche, et
-le reste. Un trou noir est en écriture seul, on ne peut qu'y jeter des données qui sont
+le reste. Un trou noir est en écriture seule, on ne peut qu'y jeter des données qui sont
 immédiatemement perdues. On trouve dans cette catégorie les systèmes de log et de
 télémétrie. Une fontaine blanche, l'inverse théorique d'un trou noir, est en lecture
 seule et ne peut être qu'initialisée, une seule fois. On trouve dans cette catégorie
-le système de configuration, qui réconcilie variables d'environnement, fichiers, 
-ligne de commande... et mets le résultat à disposition du reste du code.
+le système de configuration, qui réconcilie variables d'environnement, fichiers,
+ligne de commande... et met le résultat à disposition du reste du code.
 
 Trous noirs et fontaines blanches peuvent avoir une durée de vie équivalente à celle
 du programme entier et une portée globale. Ce sont les seuls effets de bord qu'on peut
@@ -136,7 +141,7 @@ tolérer à travers toute la base de code. Bien identifiés, une mise en place c
 tous les test permettra de les gérer une fois pour toute.
 
 Tous les autres effets de bords doivent être isolés, et si possible injectés dans le
-code métier propre à leur utilisation, plutôt que détenu par le code métier. En effet,
+code métier propre à leur utilisation, plutôt que détenus par le code métier. En effet,
 une dépendance injectée donne toute liberté au test pour déconnecter l'effet de bord
 et isoler le code, alors qu'un couplage fort rend le test difficile, surtout avec
 les langages statiques.
@@ -159,7 +164,7 @@ public:
 
 ## Prendre en main son framework de test
 
-Tous les principaux langages ont un ou plusieurs framework de test, qui apportent
+Tous les principaux langages ont un ou plusieurs frameworks de test, qui apportent
 leur lot de fonctionnalités en plus de faciliter l'écriture des tests, comme :
 
 - lancement depuis un point unique
@@ -177,18 +182,18 @@ leur lot de fonctionnalités en plus de faciliter l'écriture des tests, comme :
 - injection de substitut ou mock
 - parallélisation, plugins...
 
-Utiliser un framework de test apporte donc énormément, au prix du temps de prise en 
+Utiliser un framework de test apporte donc énormément, au prix du temps de prise en
 main du framework.
 
 L'injection de substitut mérite un point d'attention : il s'agit de remplacer
 sélectivement du code avec un effet de bord par du code propre au test,
 en réimplémentant l'interface du code original.
-Par exemple, un object de connexion à une base de données peut être remplacé par un
-objet ne faisant rien, on renvoyant immédiatement une valeur fixée.
+Par exemple, un objet de connexion à une base de données peut être remplacé par un
+objet ne faisant rien, en renvoyant immédiatement une valeur fixée.
 
 Le substitut peut être développé spécifiquement pour émuler un comportement complexe
 ou aléatoire, mais avec un retour instantané et répétable.
-Il peut aussi être complétement vide, mais permettre de vérifier que l'interface a été
+Il peut aussi être complètement vide, mais permettre de vérifier que l'interface a été
 appelée, avec quels arguments...
 Certains frameworks de langages dynamiques permettent même de créer des substituts sans
 déclarer l'interface du tout, l'interface étant créée à la volée, pour juste débrancher
@@ -202,11 +207,11 @@ De nombreuses pistes peuvent permettre d'accélérer les tests :
 
 - modulariser le code et éventuellement le séparer en plusieurs librairies. Ainsi, il y
   a moins de code, d'entrées, de cas limites à tester, et chaque librairie est validée
-  indépendament.
+  indépendamment.
 - préparer les artefacts (libs, exécutables, images...) pour le test (et la compilation
   si nécessaire) pour qu'ils soient prêts à l'emploi et en cache. Utiliser une lib
   précompilée est plus rapide que la recompiler avec tout le projet. Si un test a besoin
-  d'un conteneur, l'image doit être disponible en cache et prête à l'emploi dès que le 
+  d'un conteneur, l'image doit être disponible en cache et prête à l'emploi dès que le
   conteneur est lancé (pas d'entrypoint qui finit la mise en place par exemple).
 - profiler ses tests, pour d'abord avoir le temps par test, et ensuite savoir où les
   tests longs passent leur temps.
@@ -248,12 +253,12 @@ la base de code ? Est-il critique ? Est-ce de la logique métier ?
 Une fois la couverture analysée, c'est le moment de revenir sur les tests des
 entrées/sorties, dont la couverture de test n'est pas la métrique pertinente. Il est en
 effet facile de les couvrir par des tests qui déconnectent tellement d'effets de bord
-que le test n'apporte plus beaucoup de garantie. Il faut plutôt vérifier que les cas 
+que le test n'apporte plus beaucoup de garantie. Il faut plutôt vérifier que les cas
 normaux, limites et d'erreurs sont testés, vérifier que le lien avec le reste du système
 soit réellement testé à un moment ou un autre (connexion à l'API, base de données...),
 ou envisager un contrat de communication à valider (OpenAPI par exemple).
 
-Il n'y a pas de chiffre précis de taux de couverture à atteindre, surtout qu'il est 
+Il n'y a pas de chiffre précis de taux de couverture à atteindre, surtout qu'il est
 relativement facile de biaiser ce chiffre en déclarant des lignes hors couverture ou en
 abusant des substituts. De plus, les derniers pourcents sont bien plus difficiles à
 atteindre que les premiers. Un chiffre de 80% est une bonne base de réflexion, les
@@ -266,8 +271,8 @@ empêche en particulier d'ajouter des fonctionnalités sans leurs tests.
 ## Utiliser l'IA à bon escient
 
 Pour toutes ces tâches, plutôt rébarbatives et vues comme une perte de temps par rapport
-à l'avancée du projet, l'IA est un auxiliaire précieux. Il peut être très tentant de 
-de déléguer tout le problème à l'IA (et les derniers modèles feront un bon travail).
+à l'avancée du projet, l'IA est un auxiliaire précieux. Il peut être très tentant de
+déléguer tout le problème à l'IA (et les derniers modèles feront un bon travail).
 Mais les tests sont aussi le système qui garantit le fonctionnement du code,
 et qui permettent au développeur d'engager sa responsabilité sur le code livré.
 Est-ce que le test généré teste vraiment les points importants ? Ou est-ce qu'il s'agit
@@ -277,9 +282,20 @@ la responsabilité est sur les épaules du développeur.
 Selon les développeurs et les projets, plusieurs stratégies sont possibles : générer
 mais relire soigneusement, travailler par étape à partir des spécifications, écrire
 manuellement les tests ou au moins les tests principaux, utiliser une IA vérificatrice
-après la génération... 
+après la génération...
 
 Par délà l'appropriation des tests générés par le développeur, l'IA est surtout une
 opportunité en or d'aller plus loin dans les tests : test de performances et
-optimisation, test d'interface, fuzzy testing, mutation testing... Autant de stratégies
-de test avancées qui deviennent accessible à tous les projets.
+optimisation, test d'interface, fuzz testing, mutation testing... Autant de stratégies
+de test avancées qui deviennent accessibles à tous les projets.
+
+## Conclusion
+
+Une fois repris en main, les tests apportent la confiance indispensable pour avancer,
+et deviennent un outil de développement qui permettent de livrer vite et bien.
+À ce moment, l'équipe a acquis toute une gamme de nouvelles compétences,
+de la prise en main du framework à l'optimisation, de la refactorisation du code à
+l'ajout des tests manquant, qui rendent l'écriture de nouveaux tests banale.
+Devenu un outil du quotidien, le test peut être écrit d'abord, dans certains cas en
+partant des spécifications, faisant d'une corvée repoussée en fin de projet une étape
+préparatoire qui signalera la fin du développement et garantira la qualité.
