@@ -58,12 +58,15 @@ dependencies = [
     { name = "psycopg2-binary" },
     { name = "pydantic", extra = ["email"] },
     { name = "pydantic-settings" },
-    { name = "python-dotenv" },
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+    { name = "ty" },
+]
 solution = [
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -76,12 +79,6 @@ test = [
     { name = "requests" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "ruff" },
-    { name = "ty" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.13" },
@@ -90,23 +87,25 @@ requires-dist = [
     { name = "psycopg2-binary", specifier = ">=2.9" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.7" },
     { name = "pydantic-settings", specifier = ">=2.3" },
-    { name = "pytest", marker = "extra == 'solution'", specifier = ">=8.2" },
-    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.2" },
-    { name = "pytest-cov", marker = "extra == 'solution'", specifier = ">=5.0" },
-    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=5.0" },
-    { name = "python-dotenv", specifier = ">=1.0" },
-    { name = "requests", marker = "extra == 'test'", specifier = ">=2.32" },
-    { name = "respx", marker = "extra == 'solution'", specifier = ">=0.21" },
     { name = "sqlalchemy", specifier = ">=2.0" },
-    { name = "testcontainers", extras = ["postgres"], marker = "extra == 'solution'", specifier = ">=4.8" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
 ]
-provides-extras = ["test", "solution"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "ruff", specifier = ">=0.15.14" },
     { name = "ty", specifier = ">=0.0.38" },
+]
+solution = [
+    { name = "pytest", specifier = ">=8.2" },
+    { name = "pytest-cov", specifier = ">=5.0" },
+    { name = "respx", specifier = ">=0.21" },
+    { name = "testcontainers", extras = ["postgres"], specifier = ">=4.8" },
+]
+test = [
+    { name = "pytest", specifier = ">=8.2" },
+    { name = "pytest-cov", specifier = ">=5.0" },
+    { name = "requests", specifier = ">=2.32" },
 ]
 
 [[package]]

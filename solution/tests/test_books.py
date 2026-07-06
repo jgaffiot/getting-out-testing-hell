@@ -13,16 +13,16 @@ def test_create_book(api_client):
     response = api_client.post(
         "/books/",
         json={
-            "title": "Clean Code",
-            "author": "Robert C. Martin",
-            "isbn": "9780132350884",
+            "title": "Working with Legacy Code",
+            "author": "Michael Feathers",
+            "isbn": "9780131177055",
             "price": "35.99",
             "stock": 10,
         },
     )
     assert response.status_code == 201
     data = response.json()
-    assert data["title"] == "Clean Code"
+    assert data["title"] == "Working with Legacy Code"
     assert Decimal(data["price"]) == Decimal("35.99")
     assert data["stock"] == 10
 

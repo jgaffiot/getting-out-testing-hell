@@ -23,7 +23,7 @@ from solution.app.api_orders import (
 from solution.app.api_orders import (
     router as orders_router,
 )
-from solution.app.fakes import FakeEmailClient, FakePaymentClient
+from .fakes import FakeEmailClient, FakePaymentClient
 from solution.app.order_service import OrderService
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -73,21 +73,21 @@ def api_client(db):
 
 
 @pytest.fixture
-def payment():
+def fake_payment():
     """Provide a fresh in-memory fake payment client."""
     return FakePaymentClient()
 
 
 @pytest.fixture
-def email():
+def fake_email():
     """Provide a fresh in-memory fake email client."""
     return FakeEmailClient()
 
 
 @pytest.fixture
-def service(db, payment, email):
+def service(db, fake_payment, fake_email):
     """Build an OrderService wired to the test DB session and fakes."""
-    return OrderService(db=db, payment=payment, email=email)
+    return OrderService(db=db, payment=fake_payment, email=fake_email)
 
 
 # --- API client wired to the refactored orders router + fakes ---
