@@ -7,7 +7,8 @@ développeurs. Il s'agit du seul moyen de tester systématiquement et complètem
 éviter les régressions ou tout simplement ne pas avancer à l'aveugle.
 
 Mais une fois posé ce consensus, les ennuis commencent. Écrire les tests est considéré
-comme une corvée que personne ne veut faire, souvent repoussée à la fin du projet.
+comme une corvée, souvent repoussée à la fin du projet, et qui n'attire pas les
+volontaires.
 Ensuite les tests sont trop souvent lents, fragiles, longs à maintenir, pas évident à
 lancer, incomplets... et on finit par s'habituer à des rapports de test
 négatifs ("la CI est tout le temps rouge, mais c'est normal").
@@ -37,18 +38,21 @@ tests, il faut aussi définir les moyens alloués aux tests, qui permettront d'a
 plus tard entre ajouter des tests, ou ajouter des fonctionnalités.
 
 Les tests automatisés, par opposition aux tests manuels, forment tout ou partie de
-la suite de tests, et peuvent être lancés automatiquement et systématiquement,
-typiquement à chaque commit, c'est la fameuse CI.
+la suite de tests, et sont lancés automatiquement et systématiquement,
+typiquement à chaque commit.
 Ainsi, on s'assure contre la plupart des régressions, et cette information est apportée
 rapidement au développeur.
+Il s'agit donc d'une partie centrale du processus d'intégration continue (CI), au point
+que "CI" désigne maintenant les pipelines de tests automatisés !
 
 Certains tests restent le plus souvent manuels, par exemple
 les tests utilisateurs (dont tests d'ergonomie, tests A/B...), les tests de charges,
 les tests de performances, les tests de pénétration...
 
-Les tests automatisés sont là pour apporter un certain niveau de
-confiance sur la qualité du code, afin d'atteindre les objectifs de qualité du projet,
-dans les moyens alloués.
+Les tests automatisés sont là pour apporter un certain niveau de confiance sur la
+qualité du code, afin d'atteindre les objectifs de qualité du projet, dans les moyens
+alloués. Jamais oubliés, ils préviennent les bugs et empêchent la qualité de dériver,
+mais sont souvent limités par la difficulté à automatiser.
 
 ## Repartir de la base
 
@@ -57,11 +61,10 @@ ne sont pas seuls. Plusieurs couches successives d'outils sont nécessaires
 pour intercepter les différents problèmes de qualité.
 
 La première couche est un formatteur de code, qui permet d'uniformiser le code. Les
-avantages sont de faciliter la lecture du code, qui en se présentant toujours sous la
-même forme sera perçu plus facilement par le cerveau, de diminuer la charge du
-développeur, qui n'a plus à aligner son code à la main, et de nettoyer les comparaisons
-de code de toutes les différences de caractères d'espacement, ce qui facilite grandement
-les revues de code.
+avantages sont de faciliter la lecture du code (pour ceux qui lisent encore le code),
+de diminuer la charge du développeur (pour ceux qui l'écrivent encore), et de nettoyer
+les comparaisons de code de toutes les différences de caractères d'espacement,
+ce qui diminue la taile des Pull Request / Merge Request.
 
 La seconde couche est constituée de logiciels d'analyse, et en premier lieu des outils
 d'analyse statique. Ces derniers n'exécutent pas le code (d'où le nom de "statique")
@@ -78,7 +81,7 @@ Enfin, les analyseurs dynamiques vont étudier le code pendant son fonctionnemen
 souvent au prix d'une perte en performances (mémoire et CPU), pour chercher des erreurs
 logiques plus difficiles à détecter (typiquement les erreurs de mémoire).
 
-La dernière couche est bien sûr d'automatiser tout les outils choisis, au plus près
+La dernière couche est bien sûr d'automatiser tous les outils choisis, au plus près
 du développeur. Déjà, un lanceur comme [`doit`](https://pydoit.org/) ou
 [`just`](https://just.systems/man/en/introduction.html) permet de lancer tous les outils
 de qualité choisis en une commande simple. Ensuite, nous pouvons tirer parti des hooks
@@ -92,23 +95,23 @@ est court (jusqu'à quelques secondes).
 ## Nettoyer les tests
 
 Continuons par nettoyer les tests existants, car on peut bien sûr supprimer des tests.
-D'abord, les tests non fiables doivent être retirés, parce qu'ils n'apportent pas
-l'information dont l'équipe a besoin : que le test passe ou pas, on n'en sait pas plus
-sur la qualité du code testé. Ces tests pourront être réintégrés une fois stabilisés,
-ce qui suppose d'identifier la cause de l'instabilité. Le tirage de nombre aléatoire,
-le déclenchement à partir de l'heure rélle, la (non-)synchronisation de code exécuté en
-parallèle (multi threading, asynchrone...), la dépendance a des processus ou des API
-externes sont les causes les plus probables.
+D'abord, les tests non fiables doivent être désactivés ou supprimées, parce qu'ils
+n'apportent pas l'information dont l'équipe a besoin : que le test passe ou pas, on n'en
+sait pas plus sur la qualité du code testé. Ces tests pourront être réactivés une fois
+stabilisés, ce qui suppose d'identifier la cause de l'instabilité. Le tirage de nombre
+aléatoire, le déclenchement à partir de l'heure réelle, la (non-)synchronisation de code
+exécuté en parallèle (multi threading, asynchrone...), la dépendance à des processus ou
+des API externes sont les causes les plus probables.
 
 Par exemple, ce test échoue de façon imprévisible, car il dépend de l'heure réelle :
 
 ```python
 # Fragile : dépend de l'horloge système... et reste bloqué une heure !
-def test_token_expiration():
-    token = create_token()       # valable "1 heure"
-    assert token.is_valid()      # faux si le test tourne à 23h59m59s
-    time.sleep(3601)
-    assert not token.is_valid()
+def test_reporting_each_hour():
+    manager = Manager()            # crée un rapport à chaque heure pile
+    assert manager.report is None  # faux si le test est lancé à une heure pile
+    time.sleep(3600)               # c'est long...
+    assert manager.report is not None
 ```
 
 La solution est d'injecter l'horloge pour la contrôler depuis le test, ce qui le rend
@@ -116,13 +119,12 @@ La solution est d'injecter l'horloge pour la contrôler depuis le test, ce qui l
 
 ```python
 # Fiable : le temps est injecté, donc maîtrisé
-def test_token_expiration():
-    clock = FakeClock(now=datetime(2025, 1, 1, 12, 0))
-    token = create_token(clock=clock, ttl=timedelta(hours=1))  # refacto de create_token
-    assert token.is_valid()
-
-    clock.advance(timedelta(hours=1, seconds=1))   # on avance le temps sans attendre
-    assert not token.is_valid()
+def test_reporting_each_hour():
+    clock = FakeClock(now=datetime(2025, 1, 1, 12, 1))
+    manager = Manager(clock)           # refacto de Manager
+    assert manager.report is None      # démarrage 1 minute après midi : pas de rapport
+    clock.advance(timedelta(hours=1))  # on avance le temps sans attendre
+    assert manager.report is not None  # nouveau rapport
 ```
 
 Ensuite, les tests trop longs n'apportent pas l'information à temps aux développeurs.
@@ -132,7 +134,7 @@ Cette seconde suite de tests sera toujours automatisée, mais pas lancée à cha
 à une fréquence plus faible, comme une fois par jour (souvent la nuit),
 ou seulement juste avant fusion sur la branche principale. L'important est que le
 développeur n'ait pas besoin du résultat immédiat du test pour continuer à travailler,
-mais que l'information apporté par cette suite de tests longs ne soit nécessaire
+mais que l'information apportée par cette suite de tests longs ne soit nécessaire
 par exemple que pour une nouvelle version.
 
 Enfin, il ne faut pas hésiter à élaguer la suite de tests : certains tests ne sont pas
@@ -171,20 +173,21 @@ une dépendance injectée donne toute liberté au test pour déconnecter l'effet
 et isoler le code, alors qu'un couplage fort rend le test difficile, surtout avec
 les langages statiques.
 
-```
-# Difficile à tester
-class MyClassWithInternalConnection
+```c++
+// Difficile à tester, instancie toujours une vraie connexion
+class MyClassWithInternalConnection {
 private:
-    HttpClient http_client
+    HttpClient http_client;
 public:
-    Constructor(host, port) { http_client = HttpClient(host, port) }
-
-# Facile à tester
-class MyClassWithInjectedConnection
+    MyClassWithInternalConnection(host, port) { http_client = HttpClient(host, port); }
+};
+// Facile à tester, peut instancier un substitut comme une vraie connexion
+class MyClassWithInvertedDependency {
 private:
-    HttpClient http_client
+    AbstractHttpClient http_client;  // peut contenir la vraie connexion ou le substitut
 public:
-    Constructor(client) { http_client = client }
+    MyClassWithInvertedDependency(http_client_) { http_client = http_client_; }
+};
 ```
 
 ## Prendre en main son framework de test
@@ -193,7 +196,7 @@ Tous les principaux langages ont un ou plusieurs frameworks de test, qui apporte
 leur lot de fonctionnalités en plus de faciliter l'écriture des tests, comme :
 
 - lancement depuis un point unique
-- organisation en suite de tests, suite de suite...
+- organisation en suite de tests, suite de suites...
 - gestion de l'environnement, de l'OS, des signaux
 - fichiers et dossiers temporaires
 - interception de l'entrée standard et des sorties standards
@@ -207,12 +210,12 @@ leur lot de fonctionnalités en plus de faciliter l'écriture des tests, comme :
 - injection de substitut ou mock
 - parallélisation, plugins...
 
-Utiliser un framework de test apporte donc énormément, au prix du temps de prise en
-main du framework.
+Utiliser un framework de test apporte donc énormément, au prix du temps vite rentabilisé
+de prise en main du framework.
 
 L'injection de substitut mérite un point d'attention : il s'agit de remplacer
-sélectivement du code avec un effet de bord par du code propre au test,
-en réimplémentant l'interface du code original.
+sélectivement du code difficile à tester (souvent avec un effet de bord) par du code
+propre au test, en réimplémentant l'interface du code original.
 Par exemple, un objet de connexion à une base de données peut être remplacé par un
 objet ne faisant rien, en renvoyant immédiatement une valeur fixée.
 
@@ -227,8 +230,9 @@ De nombreux plugins ou librairies proposent des substituts clés en main pour le
 les plus courants : connexion, temps, aléatoire, base de données, logs...
 
 En combinant ces fonctionnalités, un test reste court et lisible. La structure
-given/when/then (« étant donné / quand / alors ») sépare nettement la préparation,
-l'action testée et la vérification, ce qui en fait une documentation exécutable :
+given/when/then (« étant donné / quand / alors », ou encore arrange/act/assert)
+sépare nettement la préparation, l'action testée et la vérification, ce qui en fait
+une documentation exécutable :
 
 ```python
 def test_alerte_envoyee_si_solde_negatif():
@@ -355,7 +359,7 @@ de test avancées qui deviennent accessibles à tous les projets.
 ## Conclusion
 
 Une fois repris en main, les tests apportent la confiance indispensable pour avancer,
-et deviennent un outil de développement qui permettent de livrer vite et bien.
+et deviennent un outil de développement qui permet de livrer vite et bien.
 À ce moment, l'équipe a acquis toute une gamme de nouvelles compétences,
 de la prise en main du framework à l'optimisation, de la refactorisation du code à
 l'ajout des tests manquant, qui rendent l'écriture de nouveaux tests banale.
