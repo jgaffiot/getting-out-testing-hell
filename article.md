@@ -171,22 +171,27 @@ Tous les autres effets de bords doivent être isolés, et si possible injectés 
 code métier propre à leur utilisation, plutôt que détenus par le code métier. En effet,
 une dépendance injectée donne toute liberté au test pour déconnecter l'effet de bord
 et isoler le code, alors qu'un couplage fort rend le test difficile, surtout avec
-les langages statiques.
+les langages statiques. Avec ces langages, il faut par contre prévoir un type approprié
+pour les membres de classes qui seront remplacés par un substitut. La testabilité doit
+alors être prévue à la conception.
 
 ```c++
-// Difficile à tester, instancie toujours une vraie connexion
+// Difficile à tester, instancie toujours une vraie connexion pas substituable
 class MyClassWithInternalConnection {
 private:
-    HttpClient http_client;
+    Client client;
 public:
-    MyClassWithInternalConnection(host, port) { http_client = HttpClient(host, port); }
+    MyClassWithInternalConnection(const char* host, int port) { client = Client(host, port); }
 };
-// Facile à tester, peut instancier un substitut comme une vraie connexion
+// Facile à tester, peut instancier un substitut comme une vraie connexion. Mais plus
+// complexe avec un langage statique, propriété et cycle de vie du client à définir.
 class MyClassWithInvertedDependency {
 private:
-    AbstractHttpClient http_client;  // peut contenir la vraie connexion ou le substitut
+    // Nouveau type pour contenir la vraie connexion ou un substitut
+    AbstractClient& client;  
 public:
-    MyClassWithInvertedDependency(http_client_) { http_client = http_client_; }
+    // Dans cet exemple l'instance de classe prend la propriété du client
+    MyClassWithInvertedDependency(AbstractClient&& client_): client(client_) {}
 };
 ```
 
