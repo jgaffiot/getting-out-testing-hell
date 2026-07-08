@@ -4,14 +4,16 @@ This is the "minimal refactor" of app/api/orders.py: every external
 collaborator (DB session, payment client, email client) is wired through
 Depends, so tests can swap them via dependency_overrides.
 """
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from solution.order_service import OrderService
+from solution.app.clients.email_client import EmailClient
+from solution.app.clients.payment_client import PaymentClient
+from solution.app.order_service import OrderService
+from solution.app.settings import Settings, get_settings
 from sqlalchemy.orm import Session
 
-from app.clients.email_client import EmailClient
-from app.clients.payment_client import PaymentClient
 from app.database import get_db
 from app.models.order import Order
 from app.schemas.order import OrderCreate, OrderResponse
@@ -19,20 +21,24 @@ from app.schemas.order import OrderCreate, OrderResponse
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
-def get_payment_client() -> PaymentClient:
+def get_payment_client(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> PaymentClient:
     """Provide the payment client dependency (overridable in tests)."""
-    return PaymentClient()
+    return PaymentClient(settings)
 
 
-def get_email_client() -> EmailClient:
+def get_email_client(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> EmailClient:
     """Provide the email client dependency (overridable in tests)."""
-    return EmailClient()
+    return EmailClient(settings)
 
 
 def get_order_service(
-    db: Annotated[Session ,Depends(get_db)],
+    db: Annotated[Session, Depends(get_db)],
     payment: Annotated[PaymentClient, Depends(get_payment_client)],
-    email: Annotated[EmailClient ,Depends(get_email_client)],
+    email: Annotated[EmailClient, Depends(get_email_client)],
 ) -> OrderService:
     """Build an OrderService with its collaborators injected via Depends."""
     return OrderService(db=db, payment=payment, email=email)

@@ -44,7 +44,8 @@ class TestComputeTotal:
     def test_promo_code_case_insensitive(self):
         """Promo codes are matched case-insensitively."""
         assert compute_total(
-            [(Decimal("100.00"), 1)], promo_code="save10",
+            [(Decimal("100.00"), 1)],
+            promo_code="save10",
         ) == compute_total([(Decimal("100.00"), 1)], promo_code="SAVE10")
 
     def test_empty_items(self):

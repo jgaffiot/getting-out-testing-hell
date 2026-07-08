@@ -41,7 +41,9 @@ def existing_order(db, fake_payment, fake_email, make_user, make_book):
 class TestCancellationWindow:
     """Cancellation is allowed up to the deadline and rejected after it."""
 
-    def test_just_before_deadline_succeeds(self, db, fake_payment, fake_email, existing_order):
+    def test_just_before_deadline_succeeds(
+        self, db, fake_payment, fake_email, existing_order,
+    ):
         """Cancelling one second before the deadline succeeds."""
         just_before = ORDER_TIME + WINDOW - timedelta(seconds=1)
         svc = _service_at(db, fake_payment, fake_email, just_before)
@@ -50,7 +52,9 @@ class TestCancellationWindow:
 
         assert cancelled.status == OrderStatus.CANCELLED
 
-    def test_exactly_at_deadline_succeeds(self, db, fake_payment, fake_email, existing_order):
+    def test_exactly_at_deadline_succeeds(
+        self, db, fake_payment, fake_email, existing_order,
+    ):
         """Cancelling exactly at the deadline succeeds (strict comparison)."""
         # The implementation uses `now > deadline` (strict), so equality is allowed.
         svc = _service_at(db, fake_payment, fake_email, ORDER_TIME + WINDOW)
@@ -59,7 +63,9 @@ class TestCancellationWindow:
 
         assert cancelled.status == OrderStatus.CANCELLED
 
-    def test_one_second_after_deadline_raises(self, db, fake_payment, fake_email, existing_order):
+    def test_one_second_after_deadline_raises(
+        self, db, fake_payment, fake_email, existing_order,
+    ):
         """Cancelling one second after the deadline raises an expiry error."""
         just_after = ORDER_TIME + WINDOW + timedelta(seconds=1)
         svc = _service_at(db, fake_payment, fake_email, just_after)
@@ -67,7 +73,9 @@ class TestCancellationWindow:
         with pytest.raises(ValueError, match="expired"):
             svc.cancel_order(existing_order.id)
 
-    def test_hours_after_deadline_raises(self, db, fake_payment, fake_email, existing_order):
+    def test_hours_after_deadline_raises(
+        self, db, fake_payment, fake_email, existing_order,
+    ):
         """Cancelling many hours after the deadline raises an expiry error."""
         much_later = ORDER_TIME + timedelta(hours=24)
         svc = _service_at(db, fake_payment, fake_email, much_later)
@@ -79,16 +87,25 @@ class TestCancellationWindow:
 class TestCancellationSideEffects:
     """Cancelling an order refunds, restores stock and notifies the buyer."""
 
-    def test_refunds_the_original_charge(self, db, fake_payment, fake_email, existing_order):
+    def test_refunds_the_original_charge(
+        self, db, fake_payment, fake_email, existing_order,
+    ):
         """Cancelling refunds the charge made when the order was created."""
-        svc = _service_at(db, fake_payment, fake_email, ORDER_TIME + timedelta(minutes=5))
+        svc = _service_at(
+            db, fake_payment, fake_email, ORDER_TIME + timedelta(minutes=5),
+        )
 
         svc.cancel_order(existing_order.id)
 
         assert fake_payment.charges[0].refunded is True
 
     def test_restores_stock_for_every_item(
-        self, db, fake_payment, fake_email, make_user, make_book,
+        self,
+        db,
+        fake_payment,
+        fake_email,
+        make_user,
+        make_book,
     ):
         """Cancelling restores stock for every item in the order."""
         user = make_user()
@@ -105,7 +122,9 @@ class TestCancellationSideEffects:
             card_token="tok_visa",
         )
 
-        _service_at(db, fake_payment, fake_email, ORDER_TIME + timedelta(minutes=5)).cancel_order(
+        _service_at(
+            db, fake_payment, fake_email, ORDER_TIME + timedelta(minutes=5),
+        ).cancel_order(
             order.id,
         )
 
@@ -114,9 +133,13 @@ class TestCancellationSideEffects:
         assert book_a.stock == 10
         assert book_b.stock == 8
 
-    def test_sends_cancellation_email(self, db, fake_payment, fake_email, existing_order):
+    def test_sends_cancellation_email(
+        self, db, fake_payment, fake_email, existing_order,
+    ):
         """Cancelling sends a single cancellation email to the buyer."""
-        svc = _service_at(db, fake_payment, fake_email, ORDER_TIME + timedelta(minutes=10))
+        svc = _service_at(
+            db, fake_payment, fake_email, ORDER_TIME + timedelta(minutes=10),
+        )
 
         svc.cancel_order(existing_order.id)
 
@@ -135,10 +158,16 @@ class TestCancellationGuards:
             svc.cancel_order(order_id=9_999_999)
 
     def test_already_cancelled_order_cannot_be_cancelled_again(
-        self, db, fake_payment, fake_email, existing_order,
+        self,
+        db,
+        fake_payment,
+        fake_email,
+        existing_order,
     ):
         """Cancelling an already-cancelled order raises a 'Cannot cancel' error."""
-        svc = _service_at(db, fake_payment, fake_email, ORDER_TIME + timedelta(minutes=5))
+        svc = _service_at(
+            db, fake_payment, fake_email, ORDER_TIME + timedelta(minutes=5),
+        )
         svc.cancel_order(existing_order.id)
 
         with pytest.raises(ValueError, match="Cannot cancel"):

@@ -10,10 +10,13 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+from solution.app.clients.email_client import EmailClient
+from solution.app.clients.payment_client import (  # noqa: F401
+    PaymentClient,
+    PaymentError,
+)
 from sqlalchemy.orm import Session
 
-from app.clients.email_client import EmailClient
-from app.clients.payment_client import PaymentClient, PaymentError  # noqa: F401
 from app.config import CANCELLATION_WINDOW_HOURS, MAX_ITEMS_PER_ORDER
 from app.models.book import Book
 from app.models.order import Order, OrderItem, OrderStatus

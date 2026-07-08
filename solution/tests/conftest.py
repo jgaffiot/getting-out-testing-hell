@@ -23,11 +23,12 @@ from solution.app.api_orders import (
 from solution.app.api_orders import (
     router as orders_router,
 )
-from .fakes import FakeEmailClient, FakePaymentClient
 from solution.app.order_service import OrderService
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from testcontainers.postgres import PostgresContainer
+
+from .fakes import FakeEmailClient, FakePaymentClient
 
 
 @pytest.fixture(scope="session")
@@ -121,7 +122,11 @@ def make_book(db):
     """Return a factory that inserts a Book into the test session."""
 
     def _make(
-        title="Test Book", author="Author", price=Decimal("20.00"), stock=10, isbn=None,
+        title="Test Book",
+        author="Author",
+        price=Decimal("20.00"),
+        stock=10,
+        isbn=None,
     ):
         """Create, flush and return a Book with the given attributes."""
         book = Book(title=title, author=author, price=price, stock=stock, isbn=isbn)
@@ -136,7 +141,7 @@ def make_book(db):
 def make_user(db):
     """Return a factory that inserts a User into the test session."""
 
-    def _make(email="user@example.com", name="Test User", is_active=True): # noqa: FBT002
+    def _make(email="user@example.com", name="Test User", is_active=True):  # noqa: FBT002
         """Create, flush and return a User with the given attributes."""
         user = User(email=email, name=name, is_active=is_active)
         db.add(user)
