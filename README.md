@@ -49,25 +49,37 @@ uv run pytest tests/ -v
 
 ## Workshop structure
 
-### Part 1 — Diagnosis (~35%)
+### Part 1: Diagnosis (guided analysis, 45 minutes)
 
-You will analyze the project and answer:
+* Intro & setup check (10 minutes)
+* Exploring the codebase and run the tests (15 minutes)
+  1. **Quality culture** — what signals do you see in the repo about how testing is valued?
+  2. **Architecture** — what makes the code hard to test? Where are the seams? what are the core services, 
+    the 3-rd party services, and the contract between them?
+  3. **Existing tests** — list every problem you find in `tests/`. How many tests actually test something?
+  4. **CI** — what is wrong with `.github/workflows/ci.yml`?
+* Guided diagnosis, why the tests are bad (20 minutes)
 
-1. **Quality culture** — what signals do you see in the repo about how testing is valued?
-2. **Architecture** — what makes the code hard to test? Where are the seams?
-3. **Existing tests** — list every problem you find in `tests/`. How many tests actually test something?
-4. **CI** — what is wrong with `.github/workflows/ci.yml`?
+### Part 2 : Strategy (guided analysis + group work, 40 minutes)
 
-### Part 2 — Strategy & implementation (~65%)
+* Some concepts and vocabulary (5 minutes)
+* Defining a test strategy (20 minutes)
+* Discussing trade-offs (5 minutes)
+* Tooling introduction (10 minutes)
 
-Design and implement your test strategy:
+10-minutes break
 
-1. Draw your **test pyramid** for this codebase
-2. Choose your **tools** (`pytest` fixtures, Testcontainers, fakes vs mocks, …)
-3. Identify the **essential scenarios** to cover
-4. **Refactor just enough** to make the code testable
-5. Write the tests
-6. Fix the CI
+### Part 3 : Implementation (hands-on coding, 75 minutes)
+
+* Fix existing tests (20 minutes)
+* Add new tests (25 minutes)
+* Minimal refactoring (15 minutes)
+* CI setup (10 minutes)
+
+### Conclusion (10 minutes)
+
+* Review the end-result (8 minutes)
+* Ressources (2 minutes)
 
 ---
 

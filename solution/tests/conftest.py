@@ -6,6 +6,7 @@ Scope hierarchy:
 """
 
 from decimal import Decimal
+from unittest.mock import MagicMock
 
 import pytest
 from app.api import books as books_router_module
@@ -34,7 +35,7 @@ from .fakes import FakeEmailClient, FakePaymentClient
 @pytest.fixture(scope="session")
 def pg_container():
     """Start one PostgreSQL container shared by the whole test session."""
-    with PostgresContainer("postgres:16") as pg:
+    with PostgresContainer("postgres:18") as pg:
         yield pg
 
 
@@ -50,6 +51,10 @@ def db_engine(pg_container):
 @pytest.fixture
 def db(db_engine):
     """Each test gets a transaction that is rolled back on teardown."""
+    # Here the whole test relying on this fixture will run inside a
+    # transaction, so all modification to the DB will be automatically
+    # roll-backed at the end of the test.
+
     connection = db_engine.connect()
     transaction = connection.begin()
     session = sessionmaker(bind=connection)()
@@ -71,6 +76,15 @@ def api_client(db):
 
 
 # --- Fakes shared by service-level and API-level tests ---
+
+@pytest.fixture(autouse=True)
+def no_connection_check(monkeypatch):
+    """Replace OrderService._check_connections with a no-op mock.
+
+   The real implementation sleeps 1-10s on every instantiation - fine to
+    exercise once, useless to pay for on every test.
+    """
+    monkeypatch.setattr(OrderService, "_check_connections", MagicMock())
 
 
 @pytest.fixture

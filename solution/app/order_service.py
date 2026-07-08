@@ -5,7 +5,9 @@ Key changes vs the original:
 2. `datetime.utcnow` replaced by an injectable `now` callable
 3. `compute_total()` extracted as a pure function - no I/O
 """
-
+import logging
+import random
+import time
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -28,6 +30,7 @@ PROMO_CODES: dict[str, Decimal] = {
     "HALFOFF": Decimal("0.50"),
 }
 
+log = logging.getLogger(__name__)
 
 def compute_total(
     prices: list[tuple[Decimal, int]],
@@ -60,6 +63,13 @@ class OrderService:
         self._payment = payment
         self._email = email
         self._now = now
+
+        self._check_connections()
+
+    def _check_connections(self) -> None:
+        """Check that all the connections are responsive."""
+        time.sleep(random.randint(1,10))
+        log.info(f"Checking connections at {self._now()}: OK")
 
     def create_order(
         self,

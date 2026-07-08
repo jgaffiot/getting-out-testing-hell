@@ -43,3 +43,6 @@ testpaths = ["tests"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
+
+[tool.uv]
+package = true

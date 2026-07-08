@@ -8,8 +8,9 @@ from decimal import Decimal
 
 import pytest
 from app.models.order import OrderStatus
-from solution.app.fakes import FakeEmailClient, FakePaymentClient
 from solution.app.order_service import OrderService, compute_total
+
+from .fakes import FakeEmailClient, FakePaymentClient
 
 # --- Pure function tests ---
 

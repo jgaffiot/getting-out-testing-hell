@@ -1,3 +1,5 @@
+Getting out of testing hell!
+
 We know we should write automated tests. But too often, it is a real chore:
 they may be slow, unreliable, difficult to run, to maintain, even to write!
 Why is it so hard? How to take back control?

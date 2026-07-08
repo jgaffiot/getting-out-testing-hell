@@ -1,3 +1,5 @@
+import random
+import time
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -21,6 +23,12 @@ class OrderService:
     def __init__(self):
         self._payment = PaymentClient()
         self._email = EmailClient()
+
+        self._check_connections()
+
+    def _check_connections(self) -> None:
+        """Check that all the connections are responsive."""
+        time.sleep(random.randint(1,10))
 
     def create_order(
         self,
