@@ -12,6 +12,45 @@ A bookstore REST API built with FastAPI + PostgreSQL. It supports:
 - **Users** — basic accounts
 - **Orders** — place an order, pay with a card token, get an email confirmation, cancel within 1 hour
 
+<details>
+<summary>Current architecture (<code>app/</code>)</summary>
+
+```
+app/
+├── main.py               # FastAPI app, wires the 3 routers together
+├── config.py              # module-level constants, part env var / part hardcoded
+├── database.py             # engine, SessionLocal, Base, get_db() dependency
+├── models/                  # SQLAlchemy ORM: Book, User, Order, OrderItem
+├── schemas/                  # Pydantic request/response schemas
+├── api/                        # FastAPI routers: books, users, orders
+├── services/
+│   └── order_service.py        # OrderService: order placement & cancellation logic
+└── clients/
+    ├── payment_client.py        # PaymentClient - real HTTP calls (httpx) to a fake payment API
+    └── email_client.py          # EmailClient - real SMTP calls (smtplib)
+```
+
+- `books` and `users` routers talk directly to the DB via the `get_db()` FastAPI dependency
+  — thin CRUD, no service layer.
+- `orders` router delegates to `OrderService`, but builds a **new `OrderService()` per
+  request** rather than receiving one via `Depends()`.
+- `OrderService.__init__` builds its own `PaymentClient()` and `EmailClient()`, and
+  `create_order()` / `cancel_order()` each open their own `SessionLocal()` session
+  directly instead of reusing the request's DB session — none of the three collaborators
+  (DB session, payment client, email client) are injectable.
+- `PaymentClient.charge/refund` and `EmailClient.send` make real outbound calls
+  (`httpx.post` to `PAYMENT_API_URL`, `smtplib.SMTP` to `EMAIL_SMTP_HOST`) — there's no
+  fake/stub seam, so exercising `OrderService` means hitting (or mocking) real network calls.
+- Order total/promo calculation lives inline inside `create_order` (and is duplicated,
+  slightly differently, in the otherwise-unused `calculate_order_total`) — pure
+  arithmetic is mixed with DB reads and I/O.
+- Time is read via `datetime.utcnow()` inline in `create_order` / `cancel_order` — the
+  1-hour cancellation window can't be exercised without actually waiting.
+- `config.py` mixes `os.environ.get(...)` values with hardcoded constants
+  (`PAYMENT_API_URL`, `EMAIL_FROM`) read once at import time.
+
+</details>
+
 ## Setup
 
 ### Prerequisites
@@ -35,17 +74,60 @@ uv run uvicorn app.main:app --reload
 
 API docs available at <http://localhost:8000/docs>.
 
+### Run linters
+
+```bash
+uv run ruff format .
+uv run ruff check .
+uv run ty check .
+```
+
+By default, a small set of Ruff rules are activated.
+
+The solution passes Ruff with almost all rules :
+
+```bash
+uv run ruff check --select ALL --ignore EM,TRY003 solution/app
+uv run ruff check --select ALL --ignore EM,TRY003,S,ANN,PLR2004 solution/test
+```
+
 ### Run the existing tests
 
 ```bash
-uv sync --extra test
+uv sync --group test
 uv run pytest tests/ -v
 ```
 
 > **Warning:** most tests require a running app **and** a running database.
 > Several will fail or silently skip without the right environment.
 
----
+### Run the solution
+
+Requires non-root container: Podman, rootless Docker, or belonging to the 'docker' group
+
+> **Warning:** belonging to the 'docker' group is effectively equivalent to being root, because
+> anyone in the docker group can mount the filesystem root ('/') into a privileged container.
+
+```bash
+uv sync --group solution
+uv run pytest tests/ -v
+```
+
+In case of problems with Podman, try:
+
+```bash
+# Enable the rootless Podman socket
+systemctl --user enable --now podman.socket
+# Point testcontainers at it:
+export DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock
+```
+
+and in case of test crash with a `docker.error`, try:
+
+```bash
+export TESTCONTAINERS_RYUK_DISABLED=true
+export TESTCONTAINERS_HOST_OVERRIDE=localhost
+```
 
 ## Workshop structure
 
@@ -127,3 +209,40 @@ See `solution/order_service.py` for the result.
 
 `solution/` contains the refactored service and improved tests.
 See `solution/README.md` for a full explanation of what changed and why.
+
+<details>
+<summary>Test design choices (<code>solution/tests/</code>)</summary>
+
+**Fixture scoping** (`conftest.py`) — three layers, chosen to pay the expensive setup
+once while still keeping tests isolated from each other:
+
+- `pg_container` (**session**-scoped) — one real PostgreSQL container for the whole test
+  run. Starting a container per test would dominate the run time.
+- `db_engine` (**session**-scoped) — one SQLAlchemy engine against that container, with
+  the schema created once via `Base.metadata.create_all()`.
+- `db` (**function**-scoped, the default) — each test gets its own connection wrapped in
+  a transaction that is rolled back on teardown. Tests can freely insert/mutate rows
+  without cleaning up or polluting the next test, without needing a fresh container.
+
+**Testcontainers** — `testcontainers[postgres]` spins up a real `postgres:18` in
+Docker/Podman rather than SQLite or a mocked session. The app relies on Postgres-specific
+behavior (`Numeric` for money, a native `Enum` for `OrderStatus`) that an in-memory or
+different-engine DB wouldn't faithfully exercise.
+
+**Fakes over mocks** (`fakes.py`) — `FakePaymentClient` and `FakeEmailClient` are small,
+working in-memory implementations, not `unittest.mock.Mock`:
+
+- `FakePaymentClient` records real `FakeCharge` objects in `self.charges`, generates
+  incrementing charge ids, and can be built with `fail_on_token=...` to simulate a
+  declined card — so `cancel_order`'s refund logic, for instance, can be asserted against
+  `payment.charges[0].refunded is True` instead of just checking `refund.assert_called()`.
+- `FakeEmailClient` records `SentEmail` objects, so tests assert on the actual recipient/
+  subject/body rather than only "send was called".
+
+This is deliberately different from `_check_connections` (see `order_service.py`), which
+is patched with a plain `unittest.mock.MagicMock` via the autouse `no_connection_check`
+fixture — that method is infrastructure noise (a random sleep unrelated to business
+logic), so there's nothing worth faking; it's stubbed out entirely. Fakes are reserved for
+collaborators (`payment`, `email`) whose behavior the tests actually care about.
+
+</details>
