@@ -20,7 +20,6 @@ class TestOrderServiceCalculation:
         assert total is not None
 
     def test_promo_codes_are_defined(self):
-        # Tests a dict constant, not any behavior
         assert "SAVE10" in PROMO_CODES
         assert "SAVE20" in PROMO_CODES
         assert PROMO_CODES["SAVE10"] == Decimal("0.10")
