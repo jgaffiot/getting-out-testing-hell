@@ -6,15 +6,15 @@ services:
       POSTGRES_PASSWORD: bookstore
       POSTGRES_DB: bookstore
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   mailpit:
     image: docker.io/axllent/mailpit:latest
     ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI
+      - "127.0.0.1:1025:1025"   # SMTP
+      - "127.0.0.1:8025:8025"   # Web UI
 
 volumes:
   pgdata:
