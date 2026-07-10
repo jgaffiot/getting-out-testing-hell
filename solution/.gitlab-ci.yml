@@ -1,0 +1,55 @@
+# Reference-solution CI pipeline — translated from
+# solution/.github/workflows/ci.yml. Runs the improved test suite (uv,
+# Testcontainers, coverage) against the refactored solution/app.
+
+image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+
+stages:
+  - test
+
+variables:
+  # Testcontainers needs a Docker daemon; GitLab's shared runners don't ship
+  # one, so start Docker-in-Docker as a service and point the client at it.
+  # Requires a runner configured for privileged mode.
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  # Containers Testcontainers starts publish their ports on the `docker`
+  # service's network, not on localhost — tell it where to actually reach them.
+  TESTCONTAINERS_HOST_OVERRIDE: docker
+  # Keep uv's cache inside the project dir so the `cache:` block below can
+  # pick it up — GitLab's cache only handles paths under $CI_PROJECT_DIR,
+  # unlike actions/cache which can cache ~/.cache/uv directly.
+  UV_CACHE_DIR: "$CI_PROJECT_DIR/.uv-cache"
+
+test:
+  stage: test
+  services:
+    - docker:dind
+
+  # Demonstrates GitLab's content-addressed cache: restores uv's
+  # download/build cache from a previous run so `uv sync` doesn't refetch/
+  # rebuild every dependency. The key is derived from uv.lock's hash, so it
+  # invalidates automatically when dependencies change.
+  cache:
+    key:
+      files:
+        - uv.lock
+    paths:
+      - .uv-cache/
+
+  script:
+    - uv sync --extra solution
+    - >
+      uv run pytest solution/tests/
+      --tb=short
+      -q
+      --cov=app
+      --cov-report=term-missing
+      --cov-fail-under=80
+    # No secrets needed — Testcontainers starts its own PostgreSQL
+    # No app server needed — TestClient runs in-process
+
+  artifacts:
+    when: always
+    paths:
+      - htmlcov/
