@@ -9,6 +9,7 @@ from decimal import Decimal
 import pytest
 from app.models.order import OrderStatus
 from solution.app.order_service import OrderService, compute_total
+from app.clients.payment_client import PaymentError
 
 from .fakes import FakeEmailClient, FakePaymentClient
 
@@ -165,7 +166,7 @@ class TestCreateOrder:
         failing_payment = FakePaymentClient(fail_on_token="tok_decline")
         svc = OrderService(db=db, payment=failing_payment, email=FakeEmailClient())
 
-        with pytest.raises(ValueError):  # noqa: PT011
+        with pytest.raises(PaymentError):  # noqa: PT011
             svc.create_order(
                 user_id=user.id,
                 items=[{"book_id": book.id, "quantity": 2}],

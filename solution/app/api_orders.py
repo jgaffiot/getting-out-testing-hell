@@ -9,7 +9,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from solution.app.clients.email_client import EmailClient
-from solution.app.clients.payment_client import PaymentClient
+from solution.app.clients.payment_client import PaymentClient, PaymentError
 from solution.app.order_service import OrderService
 from solution.app.settings import Settings, get_settings
 from sqlalchemy.orm import Session
@@ -58,7 +58,7 @@ def create_order(
             card_token=card_token,
             promo_code=payload.promo_code,
         )
-    except ValueError as exc:
+    except PaymentError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
