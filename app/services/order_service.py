@@ -27,7 +27,7 @@ class OrderService:
 
     def _check_connections(self) -> None:
         """Check that all the connections are responsive."""
-        time.sleep(random.randint(1, 10))
+        time.sleep(random.randint(1, 10))  # NOTE: the sleep is to simulate slowness
 
     def create_order(
         self,
