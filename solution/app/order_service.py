@@ -10,7 +10,7 @@ import logging
 import random
 import time
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from decimal import Decimal
 
 from solution.app.clients.email_client import EmailClient
@@ -58,7 +58,7 @@ class OrderService:
         db: Session,
         payment: PaymentClient,
         email: EmailClient,
-        now: Callable[[], datetime] = datetime.utcnow,
+        now: Callable[[], datetime] = lambda: datetime.now(tz=UTC),
     ) -> None:
         """Store the injected DB session, payment/email clients and clock."""
         self._db = db
