@@ -145,23 +145,3 @@ class OrderService:
             raise
         finally:
             db.close()
-
-    def calculate_order_total(
-        self, items: list[dict], promo_code: str | None = None
-    ) -> Decimal:
-        db = SessionLocal()
-        try:
-            total = Decimal("0")
-            for item in items:
-                book = db.query(Book).filter(Book.id == item["book_id"]).first()
-                if not book:
-                    raise ValueError(f"Book {item['book_id']} not found")
-                total += Decimal(str(book.price)) * item["quantity"]
-
-            if promo_code:
-                discount = PROMO_CODES.get(promo_code.upper())
-                if discount:
-                    total = total * (1 - discount)
-            return total
-        finally:
-            db.close()

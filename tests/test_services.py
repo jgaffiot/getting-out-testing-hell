@@ -11,13 +11,15 @@ from app.services.order_service import OrderService, PROMO_CODES
 
 
 class TestOrderServiceCalculation:
-    def test_promo_code_save10(self):
+    @patch("app.services.order_service.SessionLocal")
+    @patch("app.services.order_service.PaymentClient")
+    @patch("app.services.order_service.EmailClient")
+    def test_promo_code_save10(
+        self, mock_email_cls, mock_payment_cls, mock_session_cls
+    ):
         service = OrderService()
-        total = service.calculate_order_total(
-            items=[{"book_id": 1, "quantity": 1}],
-            promo_code="SAVE10",
-        )
-        assert total is not None
+        order = service.create_order(1, [], "tok_visa", "SAVE10")
+        assert order.promo_code == "SAVE10"
 
     def test_promo_codes_are_defined(self):
         assert "SAVE10" in PROMO_CODES
