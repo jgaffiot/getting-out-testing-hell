@@ -47,7 +47,9 @@ class TestCreateOrderEndpoint:
         assert Decimal(data["total"]) == Decimal("60.00")
         assert data["items"][0]["quantity"] == 2
 
-    def test_charges_the_payment_client(self, orders_api_client, user, book, payment):
+    def test_charges_the_payment_client(
+        self, orders_api_client, user, book, fake_payment
+    ):
         """Creating an order charges the payment client for the right amount."""
         orders_api_client.post(
             "/orders/",
@@ -58,11 +60,13 @@ class TestCreateOrderEndpoint:
             },
         )
 
-        assert payment.last_charge is not None
-        assert payment.last_charge.card_token == "tok_visa"
-        assert payment.last_charge.amount == 3000  # €30 in cents
+        assert fake_payment.last_charge is not None
+        assert fake_payment.last_charge.card_token == "tok_visa"
+        assert fake_payment.last_charge.amount == 3000  # €30 in cents
 
-    def test_sends_a_confirmation_email(self, orders_api_client, user, book, email):
+    def test_sends_a_confirmation_email(
+        self, orders_api_client, user, book, fake_email
+    ):
         """Creating an order sends one confirmation email to the buyer."""
         orders_api_client.post(
             "/orders/",
@@ -73,8 +77,8 @@ class TestCreateOrderEndpoint:
             },
         )
 
-        assert len(email.sent) == 1
-        assert email.last_email.to == "buyer@example.com"
+        assert len(fake_email.sent) == 1
+        assert fake_email.last_email.to == "buyer@example.com"
 
     def test_decreases_book_stock(self, orders_api_client, user, book, db):
         """Creating an order decreases the ordered book's stock."""
@@ -180,7 +184,7 @@ class TestGetOrderEndpoint:
 class TestCancelOrderEndpoint:
     """End-to-end behaviour of POST /orders/{id}/cancel."""
 
-    def test_cancels_within_window(self, orders_api_client, user, book, payment):
+    def test_cancels_within_window(self, orders_api_client, user, book, fake_payment):
         """Cancelling within the window returns 200 and refunds the charge."""
         created = orders_api_client.post(
             "/orders/",
@@ -195,7 +199,7 @@ class TestCancelOrderEndpoint:
 
         assert response.status_code == 200
         assert response.json()["status"] == OrderStatus.CANCELLED.value
-        assert payment.charges[0].refunded is True
+        assert fake_payment.charges[0].refunded is True
 
     def test_unknown_order_returns_400(self, orders_api_client):
         """Cancelling an unknown order returns 400 (mapped from ValueError)."""

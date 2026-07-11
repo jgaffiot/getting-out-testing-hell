@@ -110,7 +110,7 @@ def service(db, fake_payment, fake_email):
 
 
 @pytest.fixture
-def orders_api_client(db, payment, email):
+def orders_api_client(db, fake_payment, fake_email):
     """Return a TestClient built around the *refactored* orders router.
 
     Depends-based injection, so payment + email are real fakes and the DB is the
@@ -122,8 +122,8 @@ def orders_api_client(db, payment, email):
     test_app.include_router(orders_router)
 
     test_app.dependency_overrides[get_db] = lambda: db
-    test_app.dependency_overrides[get_payment_client] = lambda: payment
-    test_app.dependency_overrides[get_email_client] = lambda: email
+    test_app.dependency_overrides[get_payment_client] = lambda: fake_payment
+    test_app.dependency_overrides[get_email_client] = lambda: fake_email
 
     with TestClient(test_app) as client:
         yield client
