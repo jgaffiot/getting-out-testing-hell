@@ -77,12 +77,13 @@ def api_client(db):
 
 # --- Fakes shared by service-level and API-level tests ---
 
+
 @pytest.fixture(autouse=True)
 def no_connection_check(monkeypatch):
     """Replace OrderService._check_connections with a no-op mock.
 
-   The real implementation sleeps 1-10s on every instantiation - fine to
-    exercise once, useless to pay for on every test.
+    The real implementation sleeps 1-10s on every instantiation - fine to
+     exercise once, useless to pay for on every test.
     """
     monkeypatch.setattr(OrderService, "_check_connections", MagicMock())
 

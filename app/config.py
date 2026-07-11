@@ -14,4 +14,3 @@ EMAIL_FROM = "shop@bookstore.local"  # hardcoded
 
 CANCELLATION_WINDOW_HOURS = 1
 MAX_ITEMS_PER_ORDER = 10
-
