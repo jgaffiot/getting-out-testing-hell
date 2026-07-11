@@ -23,11 +23,11 @@ This directory contains the refactored code and improved tests you'll build duri
 ## Running the solution tests
 
 ```bash
-uv sync --extra solution
+uv sync --group solution
 uv run pytest solution/tests/ -v
 ```
 
-The `solution` extra is defined in `pyproject.toml` and bundles everything the reference tests need:
+The `solution` group is defined in `pyproject.toml` and bundles everything the reference tests need:
 
 ```toml
 [project.optional-dependencies]
