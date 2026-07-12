@@ -58,7 +58,7 @@ def create_order(
             card_token=card_token,
             promo_code=payload.promo_code,
         )
-    except PaymentError as exc:
+    except (PaymentError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
