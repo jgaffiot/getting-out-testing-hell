@@ -9,6 +9,7 @@ from decimal import Decimal
 import pytest
 from app.models.order import OrderStatus
 from solution.app.order_service import OrderService, compute_total
+from app.clients.payment_client import PaymentError
 
 from .fakes import FakeEmailClient, FakePaymentClient
 
@@ -102,7 +103,7 @@ class TestCreateOrder:
 
         assert order.total == Decimal("90.0")
 
-    def test_sends_confirmation_email(self, service, make_user, make_book, email):
+    def test_sends_confirmation_email(self, service, make_user, make_book, fake_email):
         """Creating an order sends one confirmation email to the buyer."""
         user = make_user(email="buyer@example.com")
         book = make_book()
@@ -113,11 +114,11 @@ class TestCreateOrder:
             card_token="tok_visa",
         )
 
-        assert len(email.sent) == 1
-        assert email.last_email.to == "buyer@example.com"
-        assert "confirmed" in email.last_email.subject.lower()
+        assert len(fake_email.sent) == 1
+        assert fake_email.last_email.to == "buyer@example.com"
+        assert "confirmed" in fake_email.last_email.subject.lower()
 
-    def test_charges_payment(self, service, make_user, make_book, payment):
+    def test_charges_payment(self, service, make_user, make_book, fake_payment):
         """Creating an order charges the payment client for the order total."""
         user = make_user()
         book = make_book(price=Decimal("25.00"), stock=2)
@@ -128,8 +129,8 @@ class TestCreateOrder:
             card_token="tok_visa",
         )
 
-        assert payment.last_charge is not None
-        assert payment.last_charge.amount == 5000  # €50.00 in cents
+        assert fake_payment.last_charge is not None
+        assert fake_payment.last_charge.amount == 5000  # €50.00 in cents
 
     def test_raises_for_unknown_user(self, service):
         """Ordering for an unknown user raises a 'not found' error."""
@@ -165,7 +166,7 @@ class TestCreateOrder:
         failing_payment = FakePaymentClient(fail_on_token="tok_decline")
         svc = OrderService(db=db, payment=failing_payment, email=FakeEmailClient())
 
-        with pytest.raises(ValueError):  # noqa: PT011
+        with pytest.raises(PaymentError):  # noqa: PT011
             svc.create_order(
                 user_id=user.id,
                 items=[{"book_id": book.id, "quantity": 2}],
