@@ -11,7 +11,7 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 
 @router.post("/", response_model=OrderResponse, status_code=201)
 def create_order(payload: OrderCreate, card_token: str, db: Session = Depends(get_db)):
-    service = OrderService()
+    service = OrderService()  # new instance per request, no way to inject a fake
     try:
         order = service.create_order(
             user_id=payload.user_id,

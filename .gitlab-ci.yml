@@ -2,22 +2,37 @@ stages:
   - test
 
 variables:
+  # Avoid apt-get hanging on interactive prompts (tzdata, etc.) when
+  # installing postgresql below — ubuntu-latest ships Postgres preinstalled,
+  # this image doesn't.
   DEBIAN_FRONTEND: noninteractive
 
 test:
   stage: test
   image: python:3.12
+  # No caching — reinstalls all dependencies on every run
 
   script:
     - pip install -e ".[test]"
+    # Uses pip instead of uv; no lock file pinning
 
     - apt-get update -qq && apt-get install -y -qq postgresql sudo
     - service postgresql start
     - sudo -u postgres psql -c "CREATE USER bookstore WITH PASSWORD 'bookstore';"
     - sudo -u postgres psql -c "CREATE DATABASE bookstore OWNER bookstore;"
+    # No wait/health check — tests may start before DB is ready
 
     - alembic upgrade head
+    # Will fail silently if DB isn't up yet
 
     - uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+    # No health check — tests start immediately, race condition
 
     - pytest tests/ -v
+    # PAYMENT_API_KEY must be defined as a GitLab CI/CD variable
+    # (Settings > CI/CD > Variables) — will fail without it
+    # No DATABASE_URL override — uses the hardcoded default from config.py
+
+  # No coverage reporting
+  # No test result artifacts
+  # No notification on failure

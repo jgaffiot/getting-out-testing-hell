@@ -19,6 +19,7 @@ PROMO_CODES: dict[str, Decimal] = {
 
 
 class OrderService:
+    # Instantiates its own dependencies - hard to override in tests
     def __init__(self):
         self._payment = PaymentClient()
         self._email = EmailClient()
@@ -36,7 +37,7 @@ class OrderService:
         card_token: str,
         promo_code: str | None = None,
     ) -> Order:
-        db = SessionLocal()
+        db = SessionLocal()  # creates its own session - cannot inject a test session
         try:
             user = db.query(User).filter(User.id == user_id).first()
             if not user:
@@ -61,6 +62,7 @@ class OrderService:
                         f"Insufficient stock for '{book.title}': {book.stock} available"
                     )
 
+                # below is a computation of the total price with discount, with I/O surrounding it
                 line_total = Decimal(str(book.price)) * item["quantity"]
                 total += line_total
                 order_items.append(
@@ -88,7 +90,7 @@ class OrderService:
                 total=total,
                 promo_code=promo_code,
                 charge_id=charge["id"],
-                created_at=datetime.utcnow(),
+                created_at=datetime.utcnow(),  # cannot control time in tests
             )
             order.items = order_items
             db.add(order)
@@ -117,6 +119,7 @@ class OrderService:
             if order.status != OrderStatus.CONFIRMED:
                 raise ValueError(f"Cannot cancel order in status {order.status}")
 
+            # Uses datetime.utcnow() directly - time-dependent logic is untestable
             deadline = order.created_at + timedelta(hours=CANCELLATION_WINDOW_HOURS)
             if datetime.utcnow() > deadline:
                 raise ValueError("Cancellation window has expired (1 hour after order)")
