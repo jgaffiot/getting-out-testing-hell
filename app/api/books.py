@@ -7,6 +7,9 @@ from app.schemas.book import BookCreate, BookResponse, BookUpdate
 
 router = APIRouter(prefix="/books", tags=["books"])
 
+# No service layer: queries, business rules (ISBN uniqueness) and HTTP concerns are mixed
+# in the routers, which depend directly on get_db - only testable through the whole API
+
 
 @router.get("/", response_model=list[BookResponse])
 def list_books(db: Session = Depends(get_db)):

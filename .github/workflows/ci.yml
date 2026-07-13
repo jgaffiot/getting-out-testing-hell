@@ -13,23 +13,34 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          # No caching — reinstalls all dependencies on every run
 
       - name: Install dependencies
         run: pip install -e . --group test
+        # Uses pip instead of uv; no lock file pinning
 
       - name: Start PostgreSQL
         run: |
           sudo systemctl start postgresql
           sudo -u postgres psql -c "CREATE USER bookstore WITH PASSWORD 'bookstore';"
           sudo -u postgres psql -c "CREATE DATABASE bookstore OWNER bookstore;"
+          # No wait/health check — tests may start before DB is ready
 
       - name: Run migrations
         run: alembic upgrade head
+        # Fails if the DB isn't up yet, with a connection error that hides the real cause
 
       - name: Start app
         run: uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+        # No health check — tests start immediately, race condition
 
       - name: Run tests
         run: pytest tests/ -v
         env:
+          # Secret missing on forks - and set here, but the app that reads it was started
+          # in a previous step, so it never sees it (PAYMENT_API_URL is hardcoded anyway)
           PAYMENT_API_KEY: ${{ secrets.PAYMENT_API_KEY }}
+
+      # No coverage reporting
+      # No test result artifacts
+      # No notification on failure

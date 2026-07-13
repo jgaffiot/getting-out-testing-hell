@@ -8,6 +8,7 @@ class PaymentError(Exception):
 
 
 class PaymentClient:
+    # returns an untyped dict - callers must know the shape of the payment API response
     def charge(self, amount: Decimal, card_token: str, description: str = "") -> dict:
         response = httpx.post(
             f"{PAYMENT_API_URL}/charges",

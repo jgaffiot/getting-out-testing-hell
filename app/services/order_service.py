@@ -19,6 +19,7 @@ PROMO_CODES: dict[str, Decimal] = {
 
 
 class OrderService:
+    # Instantiates its own dependencies - hard to override in tests
     def __init__(self):
         self._payment = PaymentClient()
         self._email = EmailClient()
@@ -27,16 +28,19 @@ class OrderService:
 
     def _check_connections(self) -> None:
         """Check that all the connections are responsive."""
+        # Connection check to the external APIs in the constructor: slow and random I/O
+        # on every OrderService(), even when the clients themselves are patched
         time.sleep(random.randint(1, 10))  # NOTE: the sleep is to simulate slowness
 
     def create_order(
         self,
         user_id: int,
+        # untyped dicts (book_id, quantity) - the contract is implicit
         items: list[dict],
         card_token: str,
         promo_code: str | None = None,
     ) -> Order:
-        db = SessionLocal()
+        db = SessionLocal()  # creates its own session - cannot inject a test session
         try:
             user = db.query(User).filter(User.id == user_id).first()
             if not user:
@@ -61,6 +65,7 @@ class OrderService:
                         f"Insufficient stock for '{book.title}': {book.stock} available"
                     )
 
+                # below is a computation of the total price with discount, with I/O surrounding it
                 line_total = Decimal(str(book.price)) * item["quantity"]
                 total += line_total
                 order_items.append(
@@ -78,6 +83,7 @@ class OrderService:
                     raise ValueError(f"Invalid promo code: {promo_code}")
                 total = total * (1 - discount)
 
+            # no logging around the payment: nothing to investigate if charge succeeds but commit fails
             charge = self._payment.charge(
                 total, card_token, description=f"Order for {user.email}"
             )
@@ -88,7 +94,7 @@ class OrderService:
                 total=total,
                 promo_code=promo_code,
                 charge_id=charge["id"],
-                created_at=datetime.utcnow(),
+                created_at=datetime.utcnow(),  # cannot control time in tests
             )
             order.items = order_items
             db.add(order)
@@ -117,6 +123,7 @@ class OrderService:
             if order.status != OrderStatus.CONFIRMED:
                 raise ValueError(f"Cannot cancel order in status {order.status}")
 
+            # Uses datetime.utcnow() directly - time-dependent logic is untestable
             deadline = order.created_at + timedelta(hours=CANCELLATION_WINDOW_HOURS)
             if datetime.utcnow() > deadline:
                 raise ValueError("Cancellation window has expired (1 hour after order)")
