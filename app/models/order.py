@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import datetime, UTC
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -21,7 +21,9 @@ class Order(Base):
     total = Column(Numeric(10, 2), nullable=False)
     promo_code = Column(String(50), nullable=True)
     charge_id = Column(String(100), nullable=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(
+        DateTime(timezone=True), nullable=False, default=datetime.now(tz=UTC)
+    )
 
     user = relationship("User")
     items = relationship(

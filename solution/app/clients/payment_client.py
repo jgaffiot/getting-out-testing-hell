@@ -1,4 +1,5 @@
 """Payment client configured via the :class:`~solution.app.settings.Settings`."""
+
 from decimal import Decimal
 from http import HTTPStatus
 
