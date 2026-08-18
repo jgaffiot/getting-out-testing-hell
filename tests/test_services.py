@@ -1,5 +1,6 @@
 """
-Service-layer tests.
+Service-layer tests. These look like unit tests but are secretly coupled
+to the real database and use overly-patched mocks that test nothing real.
 """
 
 from decimal import Decimal
@@ -10,6 +11,9 @@ import pytest
 from app.services.order_service import OrderService, PROMO_CODES
 
 
+# --- Tests that look like unit tests but require a real DB ---
+
+
 class TestOrderServiceCalculation:
     @patch("app.services.order_service.SessionLocal")
     @patch("app.services.order_service.PaymentClient")
@@ -17,14 +21,21 @@ class TestOrderServiceCalculation:
     def test_promo_code_save10(
         self, mock_email_cls, mock_payment_cls, mock_session_cls
     ):
+        # Calls calculate_order_total which opens a real DB connection
         service = OrderService()
+        # This will raise OperationalError if no DB is running - no clear error message
         order = service.create_order(1, [], "tok_visa", "SAVE10")
+        # Only checks it's present - would pass even if discount wasn't applied
         assert order.promo_code == "SAVE10"
 
     def test_promo_codes_are_defined(self):
+        # Tests a dict constant, not any behavior
         assert "SAVE10" in PROMO_CODES
         assert "SAVE20" in PROMO_CODES
         assert PROMO_CODES["SAVE10"] == Decimal("0.10")
+
+
+# --- Tests that mock so much they verify nothing ---
 
 
 class TestOrderCreation:
@@ -34,6 +45,7 @@ class TestOrderCreation:
     def test_create_order_calls_payment(
         self, mock_email_cls, mock_payment_cls, mock_session_cls
     ):
+        # Build a maze of mocks
         mock_session = MagicMock()
         mock_session_cls.return_value = mock_session
 
@@ -68,6 +80,7 @@ class TestOrderCreation:
             card_token="tok_visa",
         )
 
+        # Only verifies the mock was called - not that business logic is correct
         mock_payment.charge.assert_called_once()
 
     @patch("app.services.order_service.SessionLocal")
@@ -76,6 +89,7 @@ class TestOrderCreation:
     def test_create_order_sends_email(
         self, mock_email_cls, mock_payment_cls, mock_session_cls
     ):
+        # Copy-paste of the above setup - no shared fixture
         mock_session = MagicMock()
         mock_session_cls.return_value = mock_session
 
@@ -108,6 +122,7 @@ class TestOrderCreation:
             card_token="tok_visa",
         )
 
+        # Checks the mock was called - does not check email content or recipient
         mock_email.send.assert_called_once()
 
     @patch("app.services.order_service.SessionLocal")
@@ -132,6 +147,11 @@ class TestOrderCreation:
             service.create_order(user_id=1, items=[], card_token="tok_visa")
 
 
+# --- Test that never fails ---
+
+
 def test_order_service_instantiation():
+    # Instantiating the service tries to connect to the payment API URL - but doesn't fail yet
+    # This test always passes and asserts nothing meaningful
     service = OrderService()
     assert service is not None
