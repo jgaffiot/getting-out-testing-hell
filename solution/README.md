@@ -30,7 +30,7 @@ uv run pytest solution/tests/ -v
 The `solution` group is defined in `pyproject.toml` and bundles everything the reference tests need:
 
 ```toml
-[project.optional-dependencies]
+[dependency-groups]
 solution = [
     "pytest>=8.2",
     "pytest-cov>=5.0",
