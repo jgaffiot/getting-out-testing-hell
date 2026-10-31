@@ -9,7 +9,7 @@ test:
   image: python:3.12
 
   script:
-    - pip install -e ".[test]"
+    - pip install -e . --group test
 
     - apt-get update -qq && apt-get install -y -qq postgresql sudo
     - service postgresql start
