@@ -10,8 +10,9 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 
 
 @router.post("/", response_model=OrderResponse, status_code=201)
+# db is injected here but never used: the service opens its own session instead
 def create_order(payload: OrderCreate, card_token: str, db: Session = Depends(get_db)):
-    service = OrderService()
+    service = OrderService()  # new instance per request, no way to inject a fake
     try:
         order = service.create_order(
             user_id=payload.user_id,
@@ -34,6 +35,7 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
 
 @router.post("/{order_id}/cancel", response_model=OrderResponse)
 def cancel_order(order_id: int):
+    # no db dependency at all here, and again a new instance per request
     service = OrderService()
     try:
         return service.cancel_order(order_id)

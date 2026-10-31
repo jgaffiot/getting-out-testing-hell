@@ -7,6 +7,8 @@ from app.schemas.user import UserCreate, UserResponse
 
 router = APIRouter(prefix="/users", tags=["users"])
 
+# Same as books: no service layer, rules (unique email) live in the router, tied to get_db
+
 
 @router.post("/", response_model=UserResponse, status_code=201)
 def create_user(payload: UserCreate, db: Session = Depends(get_db)):

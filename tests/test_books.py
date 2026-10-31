@@ -9,6 +9,7 @@ import requests
 
 BASE_URL = "http://localhost:8000"
 
+# State shared across test file - fragile, tests must run in definition order
 created_book_id = None
 
 
@@ -29,6 +30,7 @@ def test_create_book():
 
 
 def test_get_book():
+    # Requests /books/None if test_create_book did not run (or failed)
     response = requests.get(f"{BASE_URL}/books/{created_book_id}")
     assert response.status_code == 200
     assert response.json()["title"] == "Clean Code"
@@ -40,6 +42,7 @@ def test_get_book_not_found():
 
 
 def test_list_books():
+    # Only checks the status code, not the content
     response = requests.get(f"{BASE_URL}/books/")
     assert response.status_code == 200
 
@@ -64,6 +67,7 @@ def test_create_book_invalid_price():
 
 
 def test_duplicate_isbn():
+    # Same ISBN as test_create_book: its first POST is silently a 409, and run alone it leaves a book behind
     requests.post(
         f"{BASE_URL}/books/",
         json={
@@ -88,6 +92,7 @@ def test_duplicate_isbn():
 
 
 def test_delete_book():
+    # Cleanup is a test, not a teardown: skipped if anything above fails
     response = requests.delete(f"{BASE_URL}/books/{created_book_id}")
     assert response.status_code == 204
 

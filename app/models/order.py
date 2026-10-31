@@ -21,6 +21,8 @@ class Order(Base):
     total = Column(Numeric(10, 2), nullable=False)
     promo_code = Column(String(50), nullable=True)
     charge_id = Column(String(100), nullable=True)
+    # default is evaluated once at import, not at each insert (it needs a callable),
+    # and it is tz-aware while the service uses naive utcnow()
     created_at = Column(
         DateTime(timezone=True), nullable=False, default=datetime.now(tz=UTC)
     )
