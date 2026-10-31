@@ -8,9 +8,10 @@ the workshop is to diagnose the problems and fix them themselves (see `README.md
 
 ## Layout
 
-- `app/`, `tests/`, `.github/workflows/ci.yml` (root) — the **workshop starting point**.
-  Intentionally flawed: brittle/order-dependent tests, un-injectable dependencies, a
-  broken CI pipeline. This is what participants work on.
+- `app/`, `tests/`, `.github/workflows/ci.yml` and `.gitlab-ci.yml` (root) — the
+  **workshop starting point**. Intentionally flawed: brittle/order-dependent tests,
+  un-injectable dependencies, broken CI pipelines (GitHub Actions and GitLab CI
+  variants of the same pipeline). This is what participants work on.
 - `solution/` — the **reference solution**: refactored app code and rewritten tests
   showing one valid end-state (dependency injection, Testcontainers, fakes, fixed CI).
   It exists as an answer key participants can compare against *after* attempting the
@@ -19,7 +20,7 @@ the workshop is to diagnose the problems and fix them themselves (see `README.md
 ## Important: don't spoil the workshop
 
 If you're helping someone who is doing (or facilitating) this workshop — diagnosing
-`tests/`, refactoring `app/`, writing new tests, fixing the root CI — **do not reach
+`tests/`, refactoring `app/`, writing new tests, fixing the root CIs (GitHub or GitLab) — **do not reach
 into `solution/` to solve it for them.** Don't copy code from `solution/`, don't paste
 its fixtures/fakes/services into the root `app/`/`tests/`, and don't reveal its
 contents unprompted. The value of the workshop is in participants finding the seams
