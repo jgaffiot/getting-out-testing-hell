@@ -1,0 +1,23 @@
+stages:
+  - test
+
+variables:
+  DEBIAN_FRONTEND: noninteractive
+
+test:
+  stage: test
+  image: python:3.12
+
+  script:
+    - pip install -e ".[test]"
+
+    - apt-get update -qq && apt-get install -y -qq postgresql sudo
+    - service postgresql start
+    - sudo -u postgres psql -c "CREATE USER bookstore WITH PASSWORD 'bookstore';"
+    - sudo -u postgres psql -c "CREATE DATABASE bookstore OWNER bookstore;"
+
+    - alembic upgrade head
+
+    - uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+
+    - pytest tests/ -v
