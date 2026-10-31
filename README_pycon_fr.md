@@ -145,7 +145,7 @@ export TESTCONTAINERS_HOST_OVERRIDE=localhost
   2. **Architecture** — qu'est-ce qui rend le code difficile à tester ? Où sont les coutures ? Quels sont les
     services cœur, les services tiers, et le contrat entre eux ?
   3. **Tests existants** — listez tous les problèmes que vous trouvez dans `tests/`. Combien de tests testent réellement quelque chose ?
-  4. **CI** — qu'est-ce qui ne va pas dans `.github/workflows/ci.yml` ?
+  4. **CI** — qu'est-ce qui ne va pas dans `.github/workflows/ci.yml` (GitHub) ou `.gitlab-ci.yml` (GitLab) ?
 * Diagnostic guidé, pourquoi les tests sont mauvais (20 minutes)
 
 ### Partie 2 : Stratégie (analyse guidée + travail en groupe, 40 minutes)
