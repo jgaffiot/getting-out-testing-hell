@@ -38,7 +38,7 @@ test:
       - .uv-cache/
 
   script:
-    - uv sync --extra solution
+    - uv sync --group test --group solution
     - >
       uv run pytest solution/tests/
       --tb=short
