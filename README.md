@@ -88,7 +88,7 @@ The solution passes Ruff with almost all rules :
 
 ```bash
 uv run ruff check --select ALL --ignore EM,TRY003 solution/app
-uv run ruff check --select ALL --ignore EM,TRY003,S,ANN,PLR2004 solution/test
+uv run ruff check --select ALL --ignore EM,TRY003,S,ANN,PLR2004 solution/tests
 ```
 
 ### Run the existing tests
