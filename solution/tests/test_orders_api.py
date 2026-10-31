@@ -11,6 +11,7 @@ layer, validation, dependency injection and DB schema are all real.
 from decimal import Decimal
 
 import pytest
+
 from app.models.order import OrderStatus
 
 
@@ -48,7 +49,11 @@ class TestCreateOrderEndpoint:
         assert data["items"][0]["quantity"] == 2
 
     def test_charges_the_payment_client(
-        self, orders_api_client, user, book, fake_payment
+        self,
+        orders_api_client,
+        user,
+        book,
+        fake_payment,
     ):
         """Creating an order charges the payment client for the right amount."""
         orders_api_client.post(
@@ -65,7 +70,11 @@ class TestCreateOrderEndpoint:
         assert fake_payment.last_charge.amount == 3000  # €30 in cents
 
     def test_sends_a_confirmation_email(
-        self, orders_api_client, user, book, fake_email
+        self,
+        orders_api_client,
+        user,
+        book,
+        fake_email,
     ):
         """Creating an order sends one confirmation email to the buyer."""
         orders_api_client.post(

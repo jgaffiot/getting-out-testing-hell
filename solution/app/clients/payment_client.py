@@ -4,9 +4,9 @@ from decimal import Decimal
 from http import HTTPStatus
 
 import httpx
-from solution.app.settings import Settings
 
 from app.clients.payment_client import PaymentError
+from solution.app.settings import Settings
 
 
 class PaymentClient:

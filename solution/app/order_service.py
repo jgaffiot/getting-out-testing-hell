@@ -10,20 +10,20 @@ import logging
 import random
 import time
 from collections.abc import Callable
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
-from solution.app.clients.email_client import EmailClient
-from solution.app.clients.payment_client import (  # noqa: F401
-    PaymentClient,
-    PaymentError,
-)
 from sqlalchemy.orm import Session
 
 from app.config import CANCELLATION_WINDOW_HOURS, MAX_ITEMS_PER_ORDER
 from app.models.book import Book
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.user import User
+from solution.app.clients.email_client import EmailClient
+from solution.app.clients.payment_client import (  # noqa: F401
+    PaymentClient,
+    PaymentError,
+)
 
 PROMO_CODES: dict[str, Decimal] = {
     "SAVE10": Decimal("0.10"),
@@ -70,8 +70,8 @@ class OrderService:
 
     def _check_connections(self) -> None:
         """Check that all the connections are responsive."""
-        time.sleep(random.randint(1, 10))
-        log.info(f"Checking connections at {self._now()}: OK")
+        time.sleep(random.randint(1, 10))  # noqa: S311 - simulated slowness, not crypto
+        log.info("Checking connections at %s: OK", self._now())
 
     def create_order(
         self,

@@ -8,15 +8,15 @@ Depends, so tests can swap them via dependency_overrides.
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from solution.app.clients.email_client import EmailClient
-from solution.app.clients.payment_client import PaymentClient, PaymentError
-from solution.app.order_service import OrderService
-from solution.app.settings import Settings, get_settings
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.order import Order
 from app.schemas.order import OrderCreate, OrderResponse
+from solution.app.clients.email_client import EmailClient
+from solution.app.clients.payment_client import PaymentClient, PaymentError
+from solution.app.order_service import OrderService
+from solution.app.settings import Settings, get_settings
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 

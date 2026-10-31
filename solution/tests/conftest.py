@@ -9,14 +9,18 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from testcontainers.postgres import PostgresContainer
+
 from app.api import books as books_router_module
 from app.api import users as users_router_module
 from app.database import Base, get_db
 from app.main import app
 from app.models.book import Book
 from app.models.user import User
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from solution.app.api_orders import (
     get_email_client,
     get_payment_client,
@@ -25,9 +29,6 @@ from solution.app.api_orders import (
     router as orders_router,
 )
 from solution.app.order_service import OrderService
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from testcontainers.postgres import PostgresContainer
 
 from .fakes import FakeEmailClient, FakePaymentClient
 

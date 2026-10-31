@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import pytest
+
 from app.config import CANCELLATION_WINDOW_HOURS
 from app.models.order import OrderStatus
 from solution.app.order_service import OrderService
