@@ -35,7 +35,7 @@ from .fakes import FakeEmailClient, FakePaymentClient
 @pytest.fixture(scope="session")
 def pg_container():
     """Start one PostgreSQL container shared by the whole test session."""
-    with PostgresContainer("postgres:18") as pg:
+    with PostgresContainer("postgres:16") as pg:
         yield pg
 
 

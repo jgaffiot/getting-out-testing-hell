@@ -224,7 +224,7 @@ once while still keeping tests isolated from each other:
   a transaction that is rolled back on teardown. Tests can freely insert/mutate rows
   without cleaning up or polluting the next test, without needing a fresh container.
 
-**Testcontainers** — `testcontainers[postgres]` spins up a real `postgres:18` in
+**Testcontainers** — `testcontainers[postgres]` spins up a real `postgres:16` in
 Docker/Podman rather than SQLite or a mocked session. The app relies on Postgres-specific
 behavior (`Numeric` for money, a native `Enum` for `OrderStatus`) that an in-memory or
 different-engine DB wouldn't faithfully exercise.
