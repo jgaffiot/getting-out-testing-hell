@@ -22,9 +22,9 @@ Participants should reach most of these conclusions on their own before reading 
 | Problem | Line(s) | Impact |
 |---|---|---|
 | `OrderService.__init__` creates `PaymentClient()` and `EmailClient()` directly | `__init__` | Impossible to inject fakes without patching at the module level |
-| `SessionLocal()` called inside every method | `create_order`, `cancel_order`, `calculate_order_total` | Cannot inject a test session; each call opens a real DB connection |
+| `SessionLocal()` called inside every method | `create_order`, `cancel_order` | Cannot inject a test session; each call opens a real DB connection |
 | `datetime.utcnow()` called inline | `create_order`, `cancel_order` | Cancellation-window logic can only be tested by sleeping 3600 s |
-| `calculate_order_total` hits the DB to do arithmetic | `calculate_order_total` | A pure calculation requires a running PostgreSQL |
+| Price and promo arithmetic is inline, mixed with DB reads | `create_order` | A pure calculation requires a running PostgreSQL |
 
 ### `app/api/orders.py`
 
@@ -68,7 +68,7 @@ Participants should reach most of these conclusions on their own before reading 
 
 | Problem | Where |
 |---|---|
-| `test_promo_code_save10` calls `calculate_order_total` which opens a real DB — not a unit test | `TestOrderServiceCalculation` |
+| `test_promo_code_save10` mocks the whole session and only asserts the promo code string — the computed total is never checked | `TestOrderServiceCalculation` |
 | 80-line mock setup copy-pasted three times — no shared fixture | `test_create_order_calls_payment`, `test_create_order_sends_email` |
 | Assertions only check call count, not correctness (`assert_called_once()`) | Both mock tests |
 | `mock_query.first.side_effect = [mock_user, mock_book]` — fragile, order-dependent | Both mock tests |

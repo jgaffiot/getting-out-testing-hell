@@ -41,8 +41,7 @@ app/
 - `PaymentClient.charge/refund` and `EmailClient.send` make real outbound calls
   (`httpx.post` to `PAYMENT_API_URL`, `smtplib.SMTP` to `EMAIL_SMTP_HOST`) — there's no
   fake/stub seam, so exercising `OrderService` means hitting (or mocking) real network calls.
-- Order total/promo calculation lives inline inside `create_order` (and is duplicated,
-  slightly differently, in the otherwise-unused `calculate_order_total`) — pure
+- Order total/promo calculation lives inline inside `create_order` — pure
   arithmetic is mixed with DB reads and I/O.
 - Time is read via `datetime.utcnow()` inline in `create_order` / `cancel_order` — the
   1-hour cancellation window can't be exercised without actually waiting.
@@ -187,7 +186,7 @@ export TESTCONTAINERS_HOST_OVERRIDE=localhost
 - `OrderService.__init__` creates `PaymentClient()` and `EmailClient()` directly — no way to inject fakes
 - `OrderService` calls `SessionLocal()` itself — can't inject a test session
 - `datetime.utcnow()` called inline — time-dependent logic can't be tested without sleeping
-- `calculate_order_total` hits the DB to do arithmetic — pure logic buried in I/O
+- Price and promo arithmetic is inline in `create_order` — pure logic buried in I/O
 - API router instantiates `OrderService()` per request — no injection point
 
 </details>

@@ -45,8 +45,7 @@ app/
   (`httpx.post` vers `PAYMENT_API_URL`, `smtplib.SMTP` vers `EMAIL_SMTP_HOST`) — il n'y a
   aucune couture pour un faux/stub, donc tester `OrderService` implique de toucher (ou de
   mocker) de vrais appels réseau.
-- Le calcul du total et des promotions est écrit en ligne dans `create_order` (et dupliqué,
-  de façon légèrement différente, dans `calculate_order_total`, par ailleurs inutilisée) —
+- Le calcul du total et des promotions est écrit en ligne dans `create_order` —
   de l'arithmétique pure est mélangée à des lectures en base et à des I/O.
 - L'heure est lue via `datetime.utcnow()` directement dans `create_order` / `cancel_order` —
   la fenêtre d'annulation d'1 heure ne peut pas être testée sans réellement attendre.
@@ -193,7 +192,7 @@ Pause de 10 minutes
 - `OrderService.__init__` crée directement `PaymentClient()` et `EmailClient()` — impossible d'injecter des fakes
 - `OrderService` appelle lui-même `SessionLocal()` — impossible d'injecter une session de test
 - `datetime.utcnow()` appelé en ligne — la logique dépendant du temps ne peut pas être testée sans `sleep`
-- `calculate_order_total` interroge la base pour faire de l'arithmétique — logique pure enfouie dans de l'I/O
+- Le calcul du prix et des promotions est écrit en ligne dans `create_order` — logique pure enfouie dans de l'I/O
 - Le routeur de l'API instancie `OrderService()` à chaque requête — aucun point d'injection
 
 </details>
