@@ -87,7 +87,7 @@ uv run ty check .
 
 Par défaut, un petit ensemble de règles Ruff est activé.
 
-La solution passe Ruff avec presque toutes les règles :
+La solution passe Ruff avec presque toutes les règles (les rares exceptions sont des choix de style) :
 
 ```bash
 uv run ruff check --select ALL --ignore EM,TRY003 solution/app
